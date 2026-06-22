@@ -1,12 +1,12 @@
 // API and Storage Service
-const BACKEND_URL = 'http://localhost:5000/api';
+const BACKEND_URL = 'http://localhost:5000/api/v1';
 
 // Check if backend is available
 let isBackendAvailable = false;
 
 async function checkBackendHealth() {
   try {
-    const response = await fetch(`${BACKEND_URL}/health`, { method: 'GET', signal: AbortSignal.timeout(1500) });
+    const response = await fetch('http://localhost:5000/api/health', { method: 'GET', signal: AbortSignal.timeout(1500) });
     if (response.ok) {
       isBackendAvailable = true;
       console.log('🏥 Backend server detected at', BACKEND_URL);
@@ -210,10 +210,10 @@ export const apiService = {
         return { success: true, user };
       }
     } else if (role === 'staff') {
-      // Allows staff001 backwards compatibility as well as doctor001 / receptionist logins
+      // Allows staff001 logins to map to receptionist role for testing compatibility
       if (username === 'staff001' && password === 'staff123') {
-        const docUser = users.find(u => u.username === 'doctor001');
-        return { success: true, user: docUser };
+        const staffUser = users.find(u => u.username === 'receptionist') || { username: 'staff001', name: 'Staff Receptionist', role: 'receptionist', staffId: 'STAFF004' };
+        return { success: true, user: staffUser };
       }
       const user = users.find(u => u.username === username && u.password === password);
       if (user && (user.role === 'doctor' || user.role === 'receptionist')) {
