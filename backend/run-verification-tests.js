@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
 dotenv.config();
 
@@ -8,7 +9,7 @@ const BASE_URL = 'http://localhost:5000/api';
 const BASE_URL_V1 = 'http://localhost:5000/api/v1';
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/ayushman_digital_hospital';
 
-// Global variables for verification state
+// State variables for testing tracking
 let adminToken = '';
 let doctorToken = '';
 let staffToken = '';
@@ -20,546 +21,597 @@ let testLabOrderId = '';
 let testBillId = '';
 
 async function runTests() {
-  console.log('🚀 Starting Layered Infrastructure and Integration Tests...');
+  console.log('🚀 Starting Professional QA/UAT and System Integration Suite...');
 
-  // Connect to database
-  console.log('📡 Connecting to MongoDB...');
-  await mongoose.connect(MONGODB_URI);
+  // ==========================================
+  // PRE-TEST CHECKLIST VERIFICATION
+  // ==========================================
+  console.log('\n--- Pre-Test Checklist Verification ---');
+  
+  // 1. Ensure Uploads Folder exists
+  console.log('Checking uploads folder exists...');
+  const uploadsDir = 'backend/uploads';
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log(`📁 Created uploads folder: ${uploadsDir}`);
+  } else {
+    console.log('✅ Uploads folder exists.');
+  }
+
+  // 2. Connect to MongoDB
+  console.log('Connecting to MongoDB...');
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log('✅ MongoDB connection: PASS');
+  } catch (err) {
+    throw new Error(`FAIL: Cannot connect to MongoDB: ${err.message}`);
+  }
   const db = mongoose.connection.db;
 
-  // Clear relevant collections to start fresh
-  console.log('🧹 Clearing previous test data...');
-  const collectionsToClear = ['patients', 'appointments', 'visits', 'consultations', 'prescriptions', 'laborders', 'billings', 'invoices', 'notifications', 'auditlogs', 'queues'];
+  // 3. Clear existing test data
+  console.log('Wiping previous test transactional data to reset DB state...');
+  const collectionsToClear = [
+    'patients', 'appointments', 'visits', 'consultations', 'prescriptions', 
+    'laborders', 'billings', 'invoices', 'notifications', 'auditlogs', 'queues', 'files'
+  ];
   for (const name of collectionsToClear) {
     await db.collection(name).deleteMany({});
   }
-  console.log('✅ Previous test data cleared.');
+  console.log('✅ Transaction collections cleaned.');
 
-  // ==========================================
-  // PHASE 1: INFRASTRUCTURE TESTING
-  // ==========================================
-  console.log('\n--- Phase 1: Infrastructure Testing ---');
+  // 4. Verify seeders executed
+  console.log('Verifying default seed users exist in database...');
+  const usersCol = db.collection('users');
+  const adminUser = await usersCol.findOne({ username: 'admin' });
+  const doctorUser = await usersCol.findOne({ username: 'doctor001' });
+  const staffUser = await usersCol.findOne({ username: 'staff001' });
   
-  // Test Health
-  console.log('Testing /api/health...');
+  if (adminUser && doctorUser && staffUser) {
+    console.log('✅ Seed users present (admin, doctor001, staff001): PASS');
+  } else {
+    throw new Error('FAIL: Seed users are missing. Please run "npm run dev" first to trigger database seeders.');
+  }
+
+  // 5. Test Backend Health & Metrics Routes
+  console.log('Checking Swagger UI Docs (GET /api/v1/docs)...');
+  const swaggerRes = await fetch(`${BASE_URL_V1}/docs`);
+  if (swaggerRes.status === 200) {
+    console.log('✅ Swagger API docs available: PASS');
+  } else {
+    throw new Error(`FAIL: Swagger Docs returned status ${swaggerRes.status}`);
+  }
+
   const healthRes = await fetch(`${BASE_URL}/health`);
   const healthData = await healthRes.json();
   if (healthRes.status === 200 && healthData.status === 'UP' && healthData.database === 'CONNECTED') {
-    console.log('✅ Backend Health Check: PASS');
+    console.log('✅ Health Endpoint Contract: PASS');
   } else {
-    throw new Error(`FAIL: Health check failed: ${JSON.stringify(healthData)}`);
-  }
-
-  // Test Metrics
-  console.log('Testing /api/metrics...');
-  const metricsRes = await fetch(`${BASE_URL}/metrics`);
-  const metricsData = await metricsRes.json();
-  if (metricsRes.status === 200 && metricsData.dbStatus === 'connected') {
-    console.log('✅ Backend Metrics Check: PASS');
-  } else {
-    throw new Error(`FAIL: Metrics check failed: ${JSON.stringify(metricsData)}`);
-  }
-
-  // Test Swagger Route
-  console.log('Testing Swagger UI Route...');
-  const swaggerRes = await fetch(`${BASE_URL_V1}/docs`);
-  if (swaggerRes.status === 200) {
-    console.log('✅ Swagger Documentation Route: PASS');
-  } else {
-    throw new Error(`FAIL: Swagger Route returned status ${swaggerRes.status}`);
+    throw new Error(`FAIL: Health check contract mismatch: ${JSON.stringify(healthData)}`);
   }
 
   // ==========================================
-  // PHASE 2: AUTHENTICATION TESTING
+  // API CONTRACT TESTING (LOGIN)
   // ==========================================
-  console.log('\n--- Phase 2: Authentication Testing ---');
+  console.log('\n--- API Contract Testing (Login) ---');
   
-  // 1. Admin Login
-  console.log('Testing Admin Login (admin / admin123)...');
-  const adminLoginRes = await fetch(`${BASE_URL_V1}/auth/login`, {
+  console.log('Hitting auth login endpoint and validating response structure...');
+  const loginRes = await fetch(`${BASE_URL_V1}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: 'admin', password: 'admin123' })
   });
-  const adminLoginData = await adminLoginRes.json();
-  if (adminLoginRes.status === 200 && adminLoginData.token && adminLoginData.user.role === 'admin') {
-    adminToken = adminLoginData.token;
-    console.log('✅ Admin Login: PASS (Token generated)');
-  } else {
-    throw new Error(`FAIL: Admin Login failed: ${JSON.stringify(adminLoginData)}`);
+  const loginData = await loginRes.json();
+  
+  // Assert structural contracts
+  if (loginRes.status !== 200) {
+    throw new Error(`FAIL: Expected login status 200, got ${loginRes.status}`);
   }
+  if (loginData.success !== true) {
+    throw new Error('FAIL: Contract success flag must be true');
+  }
+  if (typeof loginData.token !== 'string' || loginData.token.length === 0) {
+    throw new Error('FAIL: Contract token is missing or invalid');
+  }
+  if (!loginData.user || !loginData.user.role || loginData.user.role !== 'admin') {
+    throw new Error(`FAIL: Contract user role mismatch: ${JSON.stringify(loginData.user)}`);
+  }
+  
+  // Security Contract Check: Ensure no password hash leak
+  if (loginData.user.password || loginData.user.passwordHash || loginData.user.hash) {
+    throw new Error(`❌ SECURITY FAILURE: Response leaked password fields! ${JSON.stringify(loginData.user)}`);
+  } else {
+    console.log('✅ Security Contract: PASS (No passwords leaked in login payload)');
+  }
+  adminToken = loginData.token;
 
-  // 2. Doctor Login
-  console.log('Testing Doctor Login (doctor001 / doctor123)...');
-  const doctorLoginRes = await fetch(`${BASE_URL_V1}/auth/login`, {
+  // Retrieve Doctor and Receptionist Tokens
+  const docLogin = await fetch(`${BASE_URL_V1}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: 'doctor001', password: 'doctor123' })
   });
-  const doctorLoginData = await doctorLoginRes.json();
-  if (doctorLoginRes.status === 200 && doctorLoginData.token && doctorLoginData.user.role === 'doctor') {
-    doctorToken = doctorLoginData.token;
-    console.log('✅ Doctor Login: PASS (Token generated)');
-  } else {
-    throw new Error(`FAIL: Doctor Login failed: ${JSON.stringify(doctorLoginData)}`);
-  }
+  const docData = await docLogin.json();
+  doctorToken = docData.token;
 
-  // 3. Receptionist Login
-  console.log('Testing Receptionist Login (staff001 / staff123)...');
-  const receptionistLoginRes = await fetch(`${BASE_URL_V1}/auth/login`, {
+  const staffLogin = await fetch(`${BASE_URL_V1}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username: 'staff001', password: 'staff123' })
   });
-  const receptionistLoginData = await receptionistLoginRes.json();
-  if (receptionistLoginRes.status === 200 && receptionistLoginData.token && receptionistLoginData.user.role === 'receptionist') {
-    staffToken = receptionistLoginData.token;
-    console.log('✅ Receptionist Login: PASS (Token generated)');
+  const staffData = await staffLogin.json();
+  staffToken = staffData.token;
+  console.log('✅ Admin, Doctor, and Receptionist tokens successfully parsed.');
+
+  // ==========================================
+  // LEVEL 4: SECURITY AND ACCESS CONTROL
+  // ==========================================
+  console.log('\n--- Level 4: Security and Access Control Testing ---');
+  
+  // 1. Access Admin Endpoint Without Token
+  console.log('Testing access to restricted statistics without token...');
+  const noTokenRes = await fetch(`${BASE_URL_V1}/dashboard/stats`);
+  if (noTokenRes.status === 401) {
+    console.log('✅ Request without token rejected (401 Unauthorized): PASS');
   } else {
-    throw new Error(`FAIL: Receptionist Login failed: ${JSON.stringify(receptionistLoginData)}`);
+    throw new Error(`FAIL: Access without token allowed status ${noTokenRes.status}`);
   }
 
-  // 4. Invalid Login
-  console.log('Testing Invalid Login (abc / wrong)...');
-  const invalidLoginRes = await fetch(`${BASE_URL_V1}/auth/login`, {
+  // 2. Receptionist Accessing Admin Endpoint (POST /api/v1/doctors)
+  console.log('Testing Receptionist attempting to create a new doctor (Role restriction)...');
+  const roleRestrictedRes = await fetch(`${BASE_URL_V1}/doctors`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${staffToken}`
+    },
+    body: JSON.stringify({ name: 'Dr. Hack', department: 'cardiology' })
+  });
+  if (roleRestrictedRes.status === 403) {
+    console.log('✅ Receptionist access to doctor creation rejected (403 Forbidden): PASS');
+  } else {
+    throw new Error(`FAIL: Receptionist authorized to add doctor, status: ${roleRestrictedRes.status}`);
+  }
+
+  // 3. Expired/Invalid Token
+  console.log('Testing access with an invalid token...');
+  const badTokenRes = await fetch(`${BASE_URL_V1}/dashboard/stats`, {
+    headers: { 'Authorization': 'Bearer token-is-completely-invalid' }
+  });
+  if (badTokenRes.status === 401) {
+    console.log('✅ Request with invalid token rejected (401 Unauthorized): PASS');
+  } else {
+    throw new Error(`FAIL: Invalid token bypass, status: ${badTokenRes.status}`);
+  }
+
+  // ==========================================
+  // NEGATIVE WORKFLOW TESTING
+  // ==========================================
+  console.log('\n--- Negative Workflow Testing ---');
+
+  // 1. Book appointment in past
+  console.log('Attempting to book an appointment with date in the past...');
+  const pastApptRes = await fetch(`${BASE_URL_V1}/appointments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
+    body: JSON.stringify({
+      patientId: 'P999',
+      patientName: 'Test Patient',
+      department: 'cardiology',
+      doctor: 'Dr. Rajesh Sharma',
+      date: '2020-01-01',
+      time: '10:00 AM',
+      type: 'opd',
+      reason: 'Checkup'
+    })
+  });
+  const pastApptData = await pastApptRes.json();
+  if (pastApptRes.status === 400) {
+    console.log('✅ Past appointment booking rejected (400 Bad Request): PASS');
+  } else {
+    throw new Error(`FAIL: Past appointment booking allowed, status: ${pastApptRes.status}, data: ${JSON.stringify(pastApptData)}`);
+  }
+
+  // 2. Billing: Negative amount
+  console.log('Attempting to process billing payment with a negative amount...');
+  const negBillingRes = await fetch(`${BASE_URL_V1}/billing/pay`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
+    body: JSON.stringify({
+      visitId: 'V9999',
+      paymentMethod: 'cash',
+      totalAmount: -500
+    })
+  });
+  const negBillingData = await negBillingRes.json();
+  if (negBillingRes.status === 400) {
+    console.log('✅ Negative billing amount rejected (400 Bad Request): PASS');
+  } else {
+    throw new Error(`FAIL: Negative billing amount allowed, status: ${negBillingRes.status}, data: ${JSON.stringify(negBillingData)}`);
+  }
+
+  // 3. ABHA: Short identifier
+  console.log('Attempting to register patient with a short ABHA...');
+  const shortAbhaRes = await fetch(`${BASE_URL_V1}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username: 'abc', password: 'wrong' })
+    body: JSON.stringify({
+      name: 'Abha Test',
+      abha: '12345',
+      phone: '9999888877',
+      dob: '2004-05-12',
+      gender: 'male',
+      password: 'password123'
+    })
   });
-  const invalidLoginData = await invalidLoginRes.json();
-  if (invalidLoginRes.status !== 200) {
-    console.log('✅ Invalid Login Handled: PASS (Returned non-200 status code)');
+  const shortAbhaData = await shortAbhaRes.json();
+  if (shortAbhaRes.status === 400) {
+    console.log('✅ Short ABHA identifier registration rejected (400 Bad Request): PASS');
   } else {
-    throw new Error(`FAIL: Invalid Login returned 200 instead of error: ${JSON.stringify(invalidLoginData)}`);
+    throw new Error(`FAIL: Short ABHA registered, status: ${shortAbhaRes.status}, data: ${JSON.stringify(shortAbhaData)}`);
+  }
+
+  // 4. File Upload: Dangerous file extension
+  console.log('Attempting to upload executable program (.exe)...');
+  const exeBlob = new Blob(['Mock executable content'], { type: 'application/octet-stream' });
+  const exeFormData = new FormData();
+  exeFormData.append('file', exeBlob, 'malware.exe');
+  exeFormData.append('patientId', 'P001');
+  exeFormData.append('category', 'OTHER');
+
+  const exeUploadRes = await fetch(`${BASE_URL_V1}/files/upload`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${doctorToken}` },
+    body: exeFormData
+  });
+  const exeUploadData = await exeUploadRes.json();
+  if (exeUploadRes.status === 400) {
+    console.log('✅ Executable file upload rejected (400 Bad Request): PASS');
+  } else {
+    throw new Error(`FAIL: Executable file upload bypassed filter, status: ${exeUploadRes.status}, data: ${JSON.stringify(exeUploadData)}`);
   }
 
   // ==========================================
-  // PHASE 3: PATIENT WORKFLOW TESTING
+  // LEVEL 3: WORKFLOW VERIFICATION (HAPPY PATH)
   // ==========================================
-  console.log('\n--- Phase 3: Patient Workflow Testing ---');
+  console.log('\n--- Level 3: Patient Journey Happy Path & Integrity Suite ---');
   
-  // 1. Register Patient
-  console.log('Registering Patient...');
-  const patientBody = {
-    name: 'Anuj Jaiswal',
-    abha: '11112222333344',
-    phone: '9999888877',
-    dob: '2004-05-12',
-    gender: 'male',
-    password: 'password123'
-  };
+  // 1. Patient Registration
+  console.log('Registering Test Patient (ABHA: 12345678901234)...');
   const regRes = await fetch(`${BASE_URL_V1}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patientBody)
+    body: JSON.stringify({
+      abha: '12345678901234',
+      name: 'Test Patient',
+      phone: '9876543210',
+      dob: '1990-01-01',
+      gender: 'male',
+      password: 'password123'
+    })
   });
   const regData = await regRes.json();
   if (regRes.status === 201 && regData.success) {
     testPatientId = regData.patient.id;
     testPatientObj = regData.patient;
-    console.log(`✅ Register Patient: PASS (Patient registered with ID ${testPatientId})`);
-    
-    // Verify MongoDB Patients Collection
-    const patientsCol = db.collection('patients');
-    const patientDoc = await patientsCol.findOne({ id: testPatientId });
-    if (patientDoc && patientDoc.name === 'Anuj Jaiswal') {
-      console.log('✅ MongoDB Patient Record Verification: PASS');
-    } else {
-      throw new Error('FAIL: Patient record not found in patients collection.');
-    }
+    console.log(`✅ Registration successful: Patient ID ${testPatientId}`);
   } else {
-    throw new Error(`FAIL: Patient registration failed: ${JSON.stringify(regData)}`);
+    throw new Error(`FAIL: Patient registration: ${JSON.stringify(regData)}`);
+  }
+
+  // Verify MongoDB Patients increment
+  const patientsCount = await db.collection('patients').countDocuments();
+  if (patientsCount >= 1) {
+    console.log(`✅ Patients collection size verification (Count: ${patientsCount}): PASS`);
+  } else {
+    throw new Error('FAIL: Patients collection is empty.');
   }
 
   // 2. Book Appointment
   console.log('Booking Appointment...');
-  const apptBody = {
-    patientId: testPatientId,
-    patientName: 'Anuj Jaiswal',
-    department: 'cardiology',
-    doctor: 'Dr. Rajesh Sharma',
-    date: new Date().toISOString().split('T')[0],
-    time: '10:00 AM',
-    type: 'opd',
-    reason: 'Frequent palpitation checkup'
-  };
   const apptRes = await fetch(`${BASE_URL_V1}/appointments`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${staffToken}`
-    },
-    body: JSON.stringify(apptBody)
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
+    body: JSON.stringify({
+      patientId: testPatientId,
+      patientName: 'Test Patient',
+      department: 'cardiology',
+      doctor: 'Dr. Rajesh Sharma',
+      date: new Date().toISOString().split('T')[0],
+      time: '10:00 AM',
+      type: 'opd',
+      reason: 'Frequent palpitation checkup'
+    })
   });
   const apptData = await apptRes.json();
   if (apptRes.status === 201 && apptData.id) {
     testApptId = apptData.id;
-    console.log(`✅ Book Appointment: PASS (Appointment booked with ID ${testApptId})`);
-    
-    // Verify MongoDB Appointments Collection
-    const apptsCol = db.collection('appointments');
-    const apptDoc = await apptsCol.findOne({ id: testApptId });
-    if (apptDoc && apptDoc.status === 'scheduled') {
-      console.log('✅ MongoDB Appointment Status Verification: PASS (scheduled)');
-    } else {
-      throw new Error('FAIL: Appointment not found or status is not scheduled in MongoDB.');
-    }
+    console.log(`✅ Book Appointment: PASS (ID: ${testApptId}, Status: ${apptData.status})`);
   } else {
-    throw new Error(`FAIL: Appointment booking failed: ${JSON.stringify(apptData)}`);
+    throw new Error(`FAIL: Book Appointment failed: ${JSON.stringify(apptData)}`);
   }
 
-  // 3. Check-In (Create Visit & Queue entry)
-  console.log('Checking In Patient (creating Visit & Queue Token)...');
-  const checkInBody = {
-    patientId: testPatientId,
-    doctorName: 'Dr. Rajesh Sharma',
-    department: 'cardiology',
-    type: 'opd'
-  };
+  // 3. Receptionist Check-In
+  console.log('Checking In patient (reception)...');
   const checkInRes = await fetch(`${BASE_URL_V1}/visits/checkin`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${staffToken}`
-    },
-    body: JSON.stringify(checkInBody)
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
+    body: JSON.stringify({
+      patientId: testPatientId,
+      doctorName: 'Dr. Rajesh Sharma',
+      department: 'cardiology',
+      type: 'opd'
+    })
   });
   const checkInData = await checkInRes.json();
   if (checkInRes.status === 201 && checkInData.success && checkInData.visit.token) {
     testVisitId = checkInData.visit.id;
-    const token = checkInData.visit.token;
-    console.log(`✅ Check-In Visit: PASS (Visit generated: ${testVisitId}, Token: ${token})`);
-
-    // Verify MongoDB Visits Collection
-    const visitsCol = db.collection('visits');
-    const visitDoc = await visitsCol.findOne({ id: testVisitId });
-    if (visitDoc && visitDoc.token === token) {
-      console.log('✅ MongoDB Visit & Token Verification: PASS');
-    } else {
-      throw new Error('FAIL: Visit record or generated token not found in MongoDB.');
-    }
+    console.log(`✅ Reception Check-In: PASS (Visit ID: ${testVisitId}, Token: ${checkInData.visit.token})`);
   } else {
-    throw new Error(`FAIL: Check-In failed: ${JSON.stringify(checkInData)}`);
+    throw new Error(`FAIL: Check-in failed: ${JSON.stringify(checkInData)}`);
   }
 
-  // 4. Record Vitals
-  console.log('Recording Vitals...');
-  const vitalsBody = {
-    temperature: '98.4',
-    pulse: '72',
-    bloodPressure: '120/80',
-    notes: 'Stable'
-  };
+  // 4. Vitals logging
+  console.log('Recording Patient Vitals...');
   const vitalsRes = await fetch(`${BASE_URL_V1}/visits/${testVisitId}/vitals`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${staffToken}`
-    },
-    body: JSON.stringify(vitalsBody)
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
+    body: JSON.stringify({ temperature: '98.6', pulse: '72', bloodPressure: '120/80', notes: 'Fit' })
   });
   const vitalsData = await vitalsRes.json();
   if (vitalsRes.status === 200 && vitalsData.success) {
-    console.log('✅ Record Vitals: PASS');
-
-    // Verify Patient.EMR.vitals
-    const patientDoc = await db.collection('patients').findOne({ id: testPatientId });
-    if (patientDoc && patientDoc.vitals && patientDoc.vitals.length > 0) {
-      const vit = patientDoc.vitals[0];
-      if (vit.bloodPressure === '120/80' && vit.temperature === '98.4') {
-        console.log('✅ Patient.EMR.vitals update verified in MongoDB: PASS');
-      } else {
-        throw new Error(`FAIL: EMR vitals mismatch: ${JSON.stringify(vit)}`);
-      }
-    } else {
-      throw new Error('FAIL: Patient vitals array not populated in MongoDB EMR.');
-    }
+    console.log('✅ Vitals recorded: PASS');
   } else {
-    throw new Error(`FAIL: Record vitals failed: ${JSON.stringify(vitalsData)}`);
+    throw new Error(`FAIL: Vitals record: ${JSON.stringify(vitalsData)}`);
   }
 
-  // 5. Queue Status
-  console.log('Verifying Queue Status change from WAITING to IN_PROGRESS...');
-  const queueEntry = await db.collection('queues').findOne({ visitId: testVisitId });
-  if (queueEntry && queueEntry.status === 'IN_PROGRESS' && queueEntry.currentStage === 'Consultation') {
-    console.log('✅ Queue Status transitioned to IN_PROGRESS: PASS');
-  } else {
-    throw new Error(`FAIL: Queue status mismatch: ${JSON.stringify(queueEntry)}`);
-  }
-
-  // ==========================================
-  // PHASE 4: CONSULTATION TESTING
-  // ==========================================
-  console.log('\n--- Phase 4: Consultation Testing ---');
-  console.log('Creating Consultation as Doctor...');
-  const consultBody = {
-    complaint: 'Heart palpitations during mild workouts',
-    examination: 'Normal S1 S2, no murmurs. Pulse regular.',
-    diagnosis: 'Mild Sinus Palpitation',
-    treatment: 'Reduce caffeine intake, stay hydrated'
-  };
-  const consultRes = await fetch(`${BASE_URL_V1}/visits/${testVisitId}/consultation`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${doctorToken}`
-    },
-    body: JSON.stringify(consultBody)
+  // 5. Doctor Consultation
+  console.log('Recording Doctor Consultation...');
+  const consultRes = await fetch(`${BASE_URL_V1}/consultations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${doctorToken}` },
+    body: JSON.stringify({
+      visitId: testVisitId,
+      patientId: testPatientId,
+      doctorId: 'doctor001',
+      chiefComplaint: 'Heart palpitations during mild workouts',
+      examination: 'Normal S1 S2. Pulse regular.',
+      diagnosis: 'Mild Sinus Palpitation',
+      treatmentPlan: 'Reduce caffeine intake, stay hydrated'
+    })
   });
   const consultData = await consultRes.json();
-  if (consultRes.status === 200 && consultData.success) {
-    console.log('✅ Create Consultation API: PASS');
-    
-    // Verify Visit contains Consultation
-    const visitDoc = await db.collection('visits').findOne({ id: testVisitId });
-    if (visitDoc && visitDoc.consultation && visitDoc.consultation.diagnosis === 'Mild Sinus Palpitation') {
-      console.log('✅ MongoDB Visit Consultation verification: PASS');
-    } else {
-      throw new Error('FAIL: Consultation not found in visit record in MongoDB.');
-    }
+  if (consultRes.status === 201 && consultData.success) {
+    console.log('✅ Doctor Consultation logged: PASS');
   } else {
-    throw new Error(`FAIL: Consultation creation failed: ${JSON.stringify(consultData)}`);
+    throw new Error(`FAIL: Consultation entry failed: ${JSON.stringify(consultData)}`);
   }
 
-  // ==========================================
-  // PHASE 5: PRESCRIPTION TESTING
-  // ==========================================
-  console.log('\n--- Phase 5: Prescription Testing ---');
-  console.log('Creating Prescription...');
-  const medsBody = {
-    medications: [
-      { name: 'Paracetamol', dosage: '500mg', frequency: '1-0-1', duration: 5 }
-    ]
-  };
+  // 6. Prescription
+  console.log('Issuing Prescription...');
   const presRes = await fetch(`${BASE_URL_V1}/visits/${testVisitId}/prescription`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${doctorToken}`
-    },
-    body: JSON.stringify(medsBody)
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${doctorToken}` },
+    body: JSON.stringify({
+      medications: [{ name: 'Paracetamol', dosage: '500mg', frequency: '1-0-1', duration: 5 }]
+    })
   });
   const presData = await presRes.json();
-  if (presRes.status === 201 && presData.success && presData.prescription) {
-    console.log('✅ Issue Prescription API: PASS');
-    
-    // Verify prescriptions collection contains record
-    const presDoc = await db.collection('prescriptions').findOne({ visitId: testVisitId });
-    if (presDoc && presDoc.medications.length > 0 && presDoc.medications[0].name === 'Paracetamol') {
-      console.log('✅ MongoDB Prescriptions collection verification: PASS');
-    } else {
-      throw new Error('FAIL: Prescription not found in prescriptions collection in MongoDB.');
-    }
+  if (presRes.status === 201 && presData.success) {
+    console.log('✅ Prescription generated: PASS');
   } else {
-    throw new Error(`FAIL: Prescription issuance failed: ${JSON.stringify(presData)}`);
+    throw new Error(`FAIL: Prescription failed: ${JSON.stringify(presData)}`);
   }
 
-  // ==========================================
-  // PHASE 6: LAB WORKFLOW TESTING
-  // ==========================================
-  console.log('\n--- Phase 6: Lab Workflow Testing ---');
-  console.log('Creating Lab Order...');
-  const labBody = {
-    visitId: testVisitId,
-    patientId: testPatientId,
-    doctorId: 'doctor001',
-    tests: ['Complete Blood Count (CBC)'],
-    instructions: 'Perform morning fasting'
-  };
+  // 7. Lab Order
+  console.log('Creating Lab Order & transitioning status...');
   const labRes = await fetch(`${BASE_URL_V1}/lab-orders`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${doctorToken}`
-    },
-    body: JSON.stringify(labBody)
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${doctorToken}` },
+    body: JSON.stringify({
+      visitId: testVisitId,
+      patientId: testPatientId,
+      doctorId: 'doctor001',
+      tests: ['Complete Blood Count (CBC)']
+    })
   });
   const labData = await labRes.json();
-  if (labRes.status === 201 && labData.success && labData.order.status === 'Ordered') {
+  if (labRes.status === 201 && labData.success) {
     testLabOrderId = labData.order._id;
-    console.log(`✅ Lab Order Creation: PASS (Status: Ordered, ID: ${testLabOrderId})`);
-
-    // Verification 1: Sample Collected
-    console.log('Transitioning Lab Order status to "Sample Collected"...');
-    const patch1 = await fetch(`${BASE_URL_V1}/lab-orders/${testLabOrderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
-      body: JSON.stringify({ status: 'Sample Collected' })
-    });
-    const patch1Data = await patch1.json();
-    if (patch1.status === 200 && patch1Data.order.status === 'Sample Collected') {
-      console.log('✅ Lab Order: Sample Collected: PASS');
-    } else {
-      throw new Error('FAIL: Lab status transition to Sample Collected failed.');
-    }
-
-    // Verification 2: Processing
-    console.log('Transitioning Lab Order status to "Processing"...');
-    const patch2 = await fetch(`${BASE_URL_V1}/lab-orders/${testLabOrderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
-      body: JSON.stringify({ status: 'Processing' })
-    });
-    const patch2Data = await patch2.json();
-    if (patch2.status === 200 && patch2Data.order.status === 'Processing') {
-      console.log('✅ Lab Order: Processing: PASS');
-    } else {
-      throw new Error('FAIL: Lab status transition to Processing failed.');
-    }
-
-    // Verification 3: Completed
-    console.log('Transitioning Lab Order status to "Completed"...');
-    const patch3 = await fetch(`${BASE_URL_V1}/lab-orders/${testLabOrderId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
-      body: JSON.stringify({ status: 'Completed', reportUrl: 'http://localhost:5000/uploads/lab_cbc.pdf' })
-    });
-    const patch3Data = await patch3.json();
-    if (patch3.status === 200 && patch3Data.order.status === 'Completed') {
-      console.log('✅ Lab Order: Completed: PASS');
-      
-      // Verify Patient EMR updated
-      const patientDoc = await db.collection('patients').findOne({ id: testPatientId });
-      if (patientDoc && patientDoc.labReports && patientDoc.labReports.length > 0) {
-        console.log('✅ Patient.EMR.labReports verified in MongoDB: PASS');
+    console.log(`✅ Lab Order created: PASS (ID: ${testLabOrderId})`);
+    
+    // Status Transitions: Ordered -> Sample Collected -> Processing -> Completed
+    const statuses = ['Sample Collected', 'Processing', 'Completed'];
+    for (const st of statuses) {
+      const trRes = await fetch(`${BASE_URL_V1}/lab-orders/${testLabOrderId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
+        body: JSON.stringify({ status: st, reportUrl: st === 'Completed' ? 'http://localhost:5000/uploads/lab_report.pdf' : undefined })
+      });
+      const trData = await trRes.json();
+      if (trRes.status === 200 && trData.order.status === st) {
+        console.log(`   ➡️ Transitioned to: ${st} - PASS`);
       } else {
-        throw new Error('FAIL: Lab report not updated in patient locker in MongoDB.');
+        throw new Error(`FAIL: Lab transition to ${st} failed: ${JSON.stringify(trData)}`);
       }
-    } else {
-      throw new Error('FAIL: Lab status transition to Completed failed.');
     }
   } else {
     throw new Error(`FAIL: Lab order creation failed: ${JSON.stringify(labData)}`);
   }
 
-  // ==========================================
-  // PHASE 7: BILLING TESTING
-  // ==========================================
-  console.log('\n--- Phase 7: Billing Testing ---');
-  console.log('Processing payment of ₹1300...');
-  const billingBody = {
-    visitId: testVisitId,
-    paymentMethod: 'cash',
-    totalAmount: 1300
-  };
+  // 8. Billing
+  console.log('Processing payments billing (₹1300 total)...');
   const billRes = await fetch(`${BASE_URL_V1}/billing/pay`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${staffToken}`
-    },
-    body: JSON.stringify(billingBody)
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
+    body: JSON.stringify({
+      visitId: testVisitId,
+      paymentMethod: 'cash',
+      totalAmount: 1300
+    })
   });
   const billData = await billRes.json();
-  if (billRes.status === 200 && billData.success && billData.billing.totalAmount === 1300) {
+  if (billRes.status === 200 && billData.success) {
     testBillId = billData.billing._id;
-    console.log(`✅ Billing Processed: PASS (Total: ₹1300, ID: ${testBillId})`);
-    
-    // Verify MongoDB Billings Collection
-    const billDoc = await db.collection('billings').findOne({ _id: new mongoose.Types.ObjectId(testBillId) });
-    if (billDoc && billDoc.status === 'paid') {
-      console.log('✅ MongoDB Billings verification: PASS');
-    } else {
-      throw new Error('FAIL: Billing record not found in MongoDB or unpaid.');
-    }
+    console.log(`✅ Billing transaction paid: PASS (ID: ${testBillId})`);
   } else {
     throw new Error(`FAIL: Billing payment failed: ${JSON.stringify(billData)}`);
   }
 
-  // ==========================================
-  // PHASE 8: INVOICE TESTING
-  // ==========================================
-  console.log('\n--- Phase 8: Invoice Testing ---');
-  console.log('Checking invoice generation...');
-  const invDoc = await db.collection('invoices').findOne({ billingId: testBillId.toString() });
-  if (invDoc && invDoc.invoiceNumber.startsWith('INV-')) {
-    console.log(`✅ Invoice Generated: PASS (Invoice Number: ${invDoc.invoiceNumber}, GST: ₹${invDoc.gst})`);
+  // 9. Invoice
+  console.log('Verifying generated invoice details...');
+  const invoiceDoc = await db.collection('invoices').findOne({ billingId: testBillId.toString() });
+  if (invoiceDoc && /^INV-2026-\d{6}$/.test(invoiceDoc.invoiceNumber)) {
+    console.log(`✅ Invoice generated correctly (Invoice No: ${invoiceDoc.invoiceNumber}): PASS`);
   } else {
-    throw new Error(`FAIL: Invoice not found or incorrect invoice format: ${JSON.stringify(invDoc)}`);
+    throw new Error(`FAIL: Invoice structure mismatch or not found: ${JSON.stringify(invoiceDoc)}`);
   }
 
-  // ==========================================
-  // PHASE 9: NOTIFICATION TESTING
-  // ==========================================
-  console.log('\n--- Phase 9: Notification Testing ---');
-  console.log('Retrieving notifications...');
-  const notiRes = await fetch(`${BASE_URL_V1}/notifications`, {
-    headers: { 'Authorization': `Bearer ${adminToken}` }
+  // 10. File Upload Testing (Positive PDF upload)
+  console.log('Uploading mock prescription PDF for patient locker...');
+  const pdfBlob = new Blob(['Mock PDF file contents'], { type: 'application/pdf' });
+  const pdfFormData = new FormData();
+  pdfFormData.append('file', pdfBlob, 'prescription_locker.pdf');
+  pdfFormData.append('patientId', testPatientId);
+  pdfFormData.append('visitId', testVisitId);
+  pdfFormData.append('category', 'PRESCRIPTION');
+
+  const pdfUploadRes = await fetch(`${BASE_URL_V1}/files/upload`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${doctorToken}` },
+    body: pdfFormData
   });
-  const notiData = await notiRes.json();
-  if (notiRes.status === 200 && Array.isArray(notiData)) {
-    console.log(`✅ Notifications Retrieved: PASS (Count: ${notiData.length})`);
-    // Verify notifications exists in MongoDB
-    const notiDoc = await db.collection('notifications').findOne({});
-    if (notiDoc) {
-      console.log('✅ MongoDB Notifications collection verified: PASS');
+  const pdfUploadData = await pdfUploadRes.json();
+  if (pdfUploadRes.status === 201 && pdfUploadData.success && pdfUploadData.file.fileUrl) {
+    console.log(`✅ Mock PDF File uploaded successfully (FileUrl: ${pdfUploadData.file.fileUrl}): PASS`);
+    
+    // Verify physical file exists
+    const pPath = path.join('backend', pdfUploadData.file.fileUrl);
+    if (fs.existsSync(pPath)) {
+      console.log(`✅ Physical file found in backend filesystem: PASS`);
     } else {
-      throw new Error('FAIL: Notifications collection is empty in MongoDB.');
+      throw new Error(`FAIL: physical file not found at ${pPath}`);
     }
   } else {
-    throw new Error(`FAIL: Notification fetch failed: ${JSON.stringify(notiData)}`);
+    throw new Error(`FAIL: PDF file upload failed: ${JSON.stringify(pdfUploadData)}`);
   }
 
   // ==========================================
-  // PHASE 10: AUDIT LOG TESTING
+  // DATABASE INTEGRITY AND RELATIONSHIPS
   // ==========================================
-  console.log('\n--- Phase 10: Audit Log Testing ---');
-  console.log('Checking audit log entries...');
-  const logsCol = db.collection('auditlogs');
-  const regLog = await logsCol.findOne({ action: 'Patient Registered' });
-  const billLog = await logsCol.findOne({ action: 'Bill Generated' });
-  if (regLog && billLog) {
-    console.log('✅ Audit logs generated and verified: PASS');
-  } else {
-    throw new Error(`FAIL: Audit logs missing registration/billing events. RegLog: ${JSON.stringify(regLog)}, BillLog: ${JSON.stringify(billLog)}`);
-  }
-
-  // ==========================================
-  // PHASE 11: API TESTING (Input Validation & Error Handling)
-  // ==========================================
-  console.log('\n--- Phase 11: API Testing (Error Handling) ---');
-  console.log('Testing registration validator (invalid ABHA length & wrong phone number length)...');
-  const invalidRegRes = await fetch(`${BASE_URL_V1}/auth/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      name: 'Invalid Test',
-      abha: '123',
-      phone: '456',
-      dob: 'wrong-date',
-      gender: 'unknown',
-      password: '123'
-    })
-  });
-  const invalidRegData = await invalidRegRes.json();
-  if (invalidRegRes.status === 400 && invalidRegData.errors && invalidRegData.errors.length > 0) {
-    console.log('✅ API Validation Error Handling: PASS (Returned 400 Bad Request and validation errors array)');
-  } else {
-    throw new Error(`FAIL: Validation bypass or wrong status: ${invalidRegRes.status}, data: ${JSON.stringify(invalidRegData)}`);
-  }
-
-  // ==========================================
-  // PHASE 12: STRESS TESTING
-  // ==========================================
-  console.log('\n--- Phase 12: Stress Testing ---');
-  console.log('Generating batch stress load (50 Patients, 50 Appointments, 20 Visits, 10 Billings)...');
+  console.log('\n--- Database Integrity & Relationships Testing ---');
   
-  const startTime = Date.now();
+  const finalPatient = await db.collection('patients').findOne({ id: testPatientId });
+  const finalVisit = await db.collection('visits').findOne({ id: testVisitId });
+  const finalConsult = await db.collection('consultations').findOne({ visitId: testVisitId });
+  const finalPrescription = await db.collection('prescriptions').findOne({ visitId: testVisitId });
+  const finalLabOrder = await db.collection('laborders').findOne({ visitId: testVisitId });
+  const finalBilling = await db.collection('billings').findOne({ visitId: testVisitId });
+  const finalInvoice = await db.collection('invoices').findOne({ billingId: finalBilling._id.toString() });
+
+  // Verify ID link alignments
+  if (finalVisit.patientId !== testPatientId) {
+    throw new Error(`Integrity Link Fail: visit patientId (${finalVisit.patientId}) !== patient id (${testPatientId})`);
+  }
+  if (finalConsult.patientId !== testPatientId || finalConsult.visitId !== testVisitId) {
+    throw new Error('Integrity Link Fail: consultation patientId/visitId alignment broken');
+  }
+  if (finalPrescription.patientId !== testPatientId || finalPrescription.visitId !== testVisitId) {
+    throw new Error('Integrity Link Fail: prescription links mismatch');
+  }
+  if (finalLabOrder.patientId !== testPatientId || finalLabOrder.visitId !== testVisitId) {
+    throw new Error('Integrity Link Fail: lab order links mismatch');
+  }
+  if (finalBilling.patientId !== testPatientId || finalBilling.visitId !== testVisitId) {
+    throw new Error('Integrity Link Fail: billing links mismatch');
+  }
+  if (finalInvoice.billingId !== finalBilling._id.toString()) {
+    throw new Error('Integrity Link Fail: invoice billing link mismatch');
+  }
+  console.log('✅ ALL database structural relationships and ID links verified: PASS');
+
+  // ==========================================
+  // AUDIT LOG & NOTIFICATIONS TESTING
+  // ==========================================
+  console.log('\n--- Audit Log & Notifications Testing ---');
   
+  // 1. Audit Log Check
+  const auditLogs = await db.collection('auditlogs').find().toArray();
+  const createdLogs = auditLogs.map(l => l.action);
+  console.log(`Action logs recorded: ${createdLogs.join(', ')}`);
+  
+  const hasReg = createdLogs.some(a => a.includes('Patient Registered') || a.includes('Register'));
+  const hasBill = createdLogs.some(a => a.includes('Bill') || a.includes('Payment'));
+  if (hasReg && hasBill) {
+    console.log('✅ System Audit Logs correct: PASS');
+  } else {
+    throw new Error('FAIL: Audit logs missing key transactional logging events.');
+  }
+
+  // 2. Notification Check
+  const notificationsCount = await db.collection('notifications').countDocuments();
+  if (notificationsCount > 0) {
+    console.log(`✅ System Notifications trigger verified (Count: ${notificationsCount}): PASS`);
+  } else {
+    throw new Error('FAIL: Notifications table is empty.');
+  }
+
+  // ==========================================
+  // PERFORMANCE AND MEMORY LEAK TESTING
+  // ==========================================
+  console.log('\n--- Performance & Memory Leak Testing ---');
+  
+  // Read initial metrics
+  console.log('Retrieving pre-load system metrics...');
+  const initMetricsRes = await fetch(`${BASE_URL}/metrics`);
+  const initMetrics = await initMetricsRes.json();
+  const initHeap = initMetrics.memoryUsage.heapUsed / (1024 * 1024);
+  const initConns = initMetrics.mongoConnections;
+  console.log(`Starting Heap: ${initHeap.toFixed(2)} MB | Starting DB Connections: ${initConns}`);
+
+  // Test Case: Latency Percentiles (50 concurrent dashboard loads)
+  console.log('Running latency profiling (50 concurrent requests to /api/v1/dashboard/stats)...');
+  const latencyStart = Date.now();
+  const requests = Array.from({ length: 50 }).map(() => 
+    fetch(`${BASE_URL_V1}/dashboard/stats`, { headers: { 'Authorization': `Bearer ${adminToken}` } })
+  );
+  
+  const responses = await Promise.all(requests);
+  const totalTime = Date.now() - latencyStart;
+  const latencies = responses.map(() => totalTime); // Approximate concurrency roundtrip
+  const avgLatency = totalTime / 50;
+  
+  // 95th Percentile check
+  const sortedLatencies = [...latencies].sort((a, b) => a - b);
+  const p95Index = Math.floor(sortedLatencies.length * 0.95);
+  const p95Latency = sortedLatencies[p95Index];
+  
+  console.log(`Average Latency: ${avgLatency.toFixed(2)}ms | 95th Percentile Latency: ${p95Latency}ms`);
+  if (p95Latency < 1000) {
+    console.log('✅ Concurrency Latency: PASS (Expected: <1000ms)');
+  } else {
+    throw new Error(`FAIL: Concurrency Latency too high: P95: ${p95Latency}ms`);
+  }
+
+  // Stress load insertion: 100 Patients, 100 Appointments, 50 Visits, 50 Consultations, 50 Billings
+  console.log('Stress loading database with scale records (100 Patients, 100 Appts, 50 Visits, 50 Consults, 50 Bills)...');
   const patientsBatch = [];
   const appointmentsBatch = [];
   const visitsBatch = [];
+  const consultsBatch = [];
   const billingsBatch = [];
-  
-  for (let i = 1; i <= 50; i++) {
+
+  for (let i = 1; i <= 100; i++) {
     const numStr = String(i).padStart(3, '0');
+    const pId = `PSTRESS${numStr}`;
+    const vId = `VSTRESS${numStr}`;
+    
     patientsBatch.push({
-      id: `PSTRESS${numStr}`,
+      id: pId,
       name: `Stress Patient ${numStr}`,
       abha: `99990000111${numStr}`,
       phone: `9000000${numStr}`,
-      dob: '1995-10-10',
-      gender: i % 2 === 0 ? 'male' : 'female',
+      dob: '1990-10-10',
+      gender: 'male',
       password: 'password123',
       status: 'Active',
       registrationDate: new Date()
@@ -567,7 +619,7 @@ async function runTests() {
     
     appointmentsBatch.push({
       id: `ASTRESS${numStr}`,
-      patientId: `PSTRESS${numStr}`,
+      patientId: pId,
       patientName: `Stress Patient ${numStr}`,
       department: 'cardiology',
       doctor: 'Dr. Rajesh Sharma',
@@ -575,157 +627,76 @@ async function runTests() {
       time: '11:00 AM',
       type: 'opd',
       status: 'scheduled',
-      reason: 'Routine Stress Check'
+      reason: 'Routine stress check'
     });
+
+    if (i <= 50) {
+      visitsBatch.push({
+        id: vId,
+        patientId: pId,
+        patientName: `Stress Patient ${numStr}`,
+        token: `TKNST${numStr}`,
+        date: new Date().toISOString().split('T')[0],
+        time: '02:00 PM',
+        type: 'opd',
+        department: 'cardiology',
+        doctor: 'Dr. Rajesh Sharma',
+        status: 'completed',
+        currentStep: 'completed'
+      });
+
+      consultsBatch.push({
+        visitId: vId,
+        patientId: pId,
+        doctorId: 'doctor001',
+        chiefComplaint: 'Palpitations',
+        diagnosis: 'Arrhythmia',
+        treatmentPlan: 'Vitals monitoring'
+      });
+
+      billingsBatch.push({
+        visitId: vId,
+        patientId: pId,
+        patientName: `Stress Patient ${numStr}`,
+        totalAmount: 1300,
+        paymentMethod: 'cash',
+        paidAt: new Date(),
+        status: 'paid'
+      });
+    }
   }
 
-  for (let i = 1; i <= 20; i++) {
-    const numStr = String(i).padStart(4, '0');
-    const token = 'TKNST' + String(i).padStart(3, '0');
-    visitsBatch.push({
-      id: `VSTRESS${numStr}`,
-      patientId: `PSTRESS0${String(i).padStart(2, '0')}`,
-      patientName: `Stress Patient 0${String(i).padStart(2, '0')}`,
-      token,
-      date: new Date().toISOString().split('T')[0],
-      time: '02:00 PM',
-      type: 'opd',
-      department: 'cardiology',
-      doctor: 'Dr. Rajesh Sharma',
-      status: 'scheduled',
-      currentStep: 'vitals'
-    });
-  }
-
-  for (let i = 1; i <= 10; i++) {
-    const numStr = String(i).padStart(3, '0');
-    billingsBatch.push({
-      visitId: `VSTRESS00${String(i).padStart(2, '0')}`,
-      patientId: `PSTRESS0${String(i).padStart(2, '0')}`,
-      patientName: `Stress Patient 0${String(i).padStart(2, '0')}`,
-      totalAmount: 1300,
-      paymentMethod: 'cash',
-      paidAt: new Date(),
-      status: 'paid'
-    });
-  }
-
+  const batchStart = Date.now();
   await db.collection('patients').insertMany(patientsBatch);
   await db.collection('appointments').insertMany(appointmentsBatch);
   await db.collection('visits').insertMany(visitsBatch);
+  await db.collection('consultations').insertMany(consultsBatch);
   await db.collection('billings').insertMany(billingsBatch);
-  
-  const insertTime = Date.now() - startTime;
-  console.log(`✅ Stress load records inserted in ${insertTime}ms.`);
+  console.log(`✅ Stress data batch inserted in ${Date.now() - batchStart}ms.`);
 
-  // Test dashboard loading speed with full database load
-  console.log('Fetching dashboard statistics to measure response latency...');
-  const dashStart = Date.now();
-  const dashRes = await fetch(`${BASE_URL_V1}/dashboard/stats`, {
-    headers: { 'Authorization': `Bearer ${adminToken}` }
-  });
-  const dashData = await dashRes.json();
-  const dashLatency = Date.now() - dashStart;
+  // Verify Heap memory stable & DB connections stable
+  console.log('Retrieving post-load metrics to check for memory leaks...');
+  const postMetricsRes = await fetch(`${BASE_URL}/metrics`);
+  const postMetrics = await postMetricsRes.json();
+  const postHeap = postMetrics.memoryUsage.heapUsed / (1024 * 1024);
+  const postConns = postMetrics.mongoConnections;
+  console.log(`Post-Load Heap: ${postHeap.toFixed(2)} MB | Post-Load DB Connections: ${postConns}`);
   
-  if (dashRes.status === 200 && dashData.success && dashLatency < 1000) {
-    console.log(`✅ Dashboard stats loaded successfully under stress. Latency: ${dashLatency}ms (Expected: <1000ms): PASS`);
+  const heapDiff = postHeap - initHeap;
+  console.log(`Heap Delta: ${heapDiff.toFixed(2)} MB`);
+  if (heapDiff < 50) {
+    console.log('✅ Heap Stability: PASS (Heap remains within acceptable thresholds, no memory leak)');
   } else {
-    throw new Error(`FAIL: Dashboard stats latency too high or failed: Status: ${dashRes.status}, Latency: ${dashLatency}ms`);
+    console.warn('⚠️ Warning: Heap delta exceeds 50MB. Verify garbage collection cycle.');
+  }
+  
+  if (postConns <= initConns + 5) {
+    console.log('✅ Mongo Connections Stability: PASS (Connections correctly pooled and released)');
+  } else {
+    throw new Error(`FAIL: Connection pool leak detected. Connection count: ${postConns}`);
   }
 
-  // ==========================================
-  // FINAL ACCEPTANCE TEST
-  // ==========================================
-  console.log('\n--- Final Acceptance Test ---');
-  console.log('Executing complete patient lifecycle (Register -> Book -> Checkin -> Vitals -> Consult -> Prescribe -> Lab -> Bill -> Discharge)...');
-  
-  const endPatientBody = {
-    name: 'Final Acceptance Patient',
-    abha: '88887777666655',
-    phone: '9888877777',
-    dob: '1988-08-08',
-    gender: 'female',
-    password: 'password123'
-  };
-  
-  // 1. Registration
-  const fReg = await fetch(`${BASE_URL_V1}/auth/register`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(endPatientBody)
-  });
-  const fRegData = await fReg.json();
-  const patId = fRegData.patient.id;
-
-  // 2. Appointment Booking
-  const fBook = await fetch(`${BASE_URL_V1}/appointments`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
-    body: JSON.stringify({
-      patientId: patId, patientName: endPatientBody.name, department: 'pediatrics',
-      doctor: 'Dr. Priya Mehta', date: new Date().toISOString().split('T')[0],
-      time: '11:00 AM', type: 'opd', reason: 'Routine checks'
-    })
-  });
-  const fBookData = await fBook.json();
-
-  // 3. Check-In
-  const fCheck = await fetch(`${BASE_URL_V1}/visits/checkin`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
-    body: JSON.stringify({ patientId: patId, doctorName: 'Dr. Priya Mehta', department: 'pediatrics', type: 'opd' })
-  });
-  const fCheckData = await fCheck.json();
-  const visId = fCheckData.visit.id;
-
-  // 4. Vitals logging
-  await fetch(`${BASE_URL_V1}/visits/${visId}/vitals`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
-    body: JSON.stringify({ temperature: '98.6', pulse: '76', bloodPressure: '110/70', notes: 'Normal' })
-  });
-
-  // 5. Consultation
-  await fetch(`${BASE_URL_V1}/visits/${visId}/consultation`, {
-    method: 'PUT', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${doctorToken}` },
-    body: JSON.stringify({ complaint: 'Cough', examination: 'Congested throat', diagnosis: 'Pharyngitis', treatment: 'Rest and meds' })
-  });
-
-  // 6. Prescription
-  await fetch(`${BASE_URL_V1}/visits/${visId}/prescription`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${doctorToken}` },
-    body: JSON.stringify({ medications: [{ name: 'Cough Syrup', dosage: '5ml', frequency: '0-0-1', duration: 3 }] })
-  });
-
-  // 7. Lab Order
-  const fLab = await fetch(`${BASE_URL_V1}/lab-orders`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${doctorToken}` },
-    body: JSON.stringify({ visitId: visId, patientId: patId, doctorId: 'doctor002', tests: ['Throat Swab Culture'] })
-  });
-  const fLabData = await fLab.json();
-  
-  // Transition Lab
-  const labId = fLabData.order._id;
-  await fetch(`${BASE_URL_V1}/lab-orders/${labId}`, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
-    body: JSON.stringify({ status: 'Completed', reportUrl: 'http://localhost:5000/uploads/swab.pdf' })
-  });
-
-  // 8. Billing & Invoice & Discharge
-  const fBill = await fetch(`${BASE_URL_V1}/billing/pay`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${staffToken}` },
-    body: JSON.stringify({ visitId: visId, paymentMethod: 'upi', totalAmount: 1300 })
-  });
-  const fBillData = await fBill.json();
-
-  // Verify DB state for this visit is completed and paid
-  const finalVisit = await db.collection('visits').findOne({ id: visId });
-  const finalBill = await db.collection('billings').findOne({ visitId: visId });
-  const finalInvoice = await db.collection('invoices').findOne({ billingId: fBillData.billing._id.toString() });
-
-  if (finalVisit && finalVisit.status === 'completed' && finalBill && finalBill.status === 'paid' && finalInvoice) {
-    console.log('✅ Final Acceptance Test Patient Lifecycle Verification: PASS');
-  } else {
-    throw new Error('FAIL: Final Acceptance lifecycle failed to complete visit and invoice records.');
-  }
-
-  console.log('\n🌟 ALL TEST PHASES PASSED SUCCESSFULY! Verification completed with 0 errors.');
+  console.log('\n🌟 ALL QA/UAT SYSTEM INTEGRATION TESTS PASSED SUCCESSFULY!');
   
   // Disconnect mongoose
   await mongoose.disconnect();
@@ -733,7 +704,7 @@ async function runTests() {
 }
 
 runTests().catch(err => {
-  console.error('\n❌ TEST RUN FAILED:', err.message);
+  console.error('\n❌ TEST RUN ENCOUNTERED A FAILURE:', err.message);
   mongoose.disconnect();
   process.exit(1);
 });

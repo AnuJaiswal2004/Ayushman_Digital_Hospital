@@ -16,7 +16,14 @@ const storage = multer.diskStorage({
 
 const uploadMiddleware = multer({ 
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (ext === '.exe' || ext === '.bat' || ext === '.sh' || ext === '.js') {
+      return cb(new Error('Dangerous file extensions are rejected'), false);
+    }
+    cb(null, true);
+  }
 });
 
 class FileController {

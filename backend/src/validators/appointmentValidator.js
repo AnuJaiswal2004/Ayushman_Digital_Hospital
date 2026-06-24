@@ -12,7 +12,14 @@ export const validateAppointmentBooking = [
     .withMessage('Department name is required'),
   body('date')
     .notEmpty()
-    .withMessage('Date is required'),
+    .withMessage('Date is required')
+    .custom((value) => {
+      const today = new Date().toISOString().split('T')[0];
+      if (value < today) {
+        throw new Error('Appointment date cannot be in the past');
+      }
+      return true;
+    }),
   body('time')
     .notEmpty()
     .withMessage('Time is required'),

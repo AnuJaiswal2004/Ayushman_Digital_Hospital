@@ -42,7 +42,10 @@ class MetricsService {
       patients,
       visits,
       appointments,
-      dbStatus
+      dbStatus,
+      memoryUsage: process.memoryUsage(),
+      cpuUsage: process.cpuUsage(),
+      mongoConnections: mongoose.connections.length
     };
   }
 }
