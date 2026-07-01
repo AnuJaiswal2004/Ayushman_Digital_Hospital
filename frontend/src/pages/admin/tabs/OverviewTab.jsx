@@ -277,11 +277,11 @@ export default function OverviewTab() {
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Emergency Cases</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-rose-600 dark:text-rose-500">{stats.emergencyCases}</span>
-              <span className="text-rose-650 dark:text-rose-450 text-[9px] font-black font-mono tracking-tighter">HIGH PRIO</span>
+              <span className="text-rose-600 dark:text-rose-400 text-[9px] font-black font-mono tracking-tighter">HIGH PRIO</span>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <div className="bg-rose-500/10 p-2.5 rounded-xl text-rose-600 dark:text-rose-450 group-hover:bg-rose-600 group-hover:text-white transition-all">
+            <div className="bg-rose-500/10 p-2.5 rounded-xl text-rose-600 dark:text-rose-400 group-hover:bg-rose-600 group-hover:text-white transition-all">
               <Activity className="h-4.5 w-4.5" />
             </div>
             <Sparkline color="#f43f5e" />
@@ -437,16 +437,16 @@ export default function OverviewTab() {
                   </tr>
                 ) : (
                   recentPatients.map((patient) => (
-                    <tr key={patient.id} className="hover:bg-slate-50 dark:hover:bg-slate-850/20 text-slate-600 dark:text-slate-350">
+                    <tr key={patient.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 text-slate-600 dark:text-slate-300">
                       <td className="py-2.5 pr-3 font-bold text-slate-800 dark:text-white">{patient.name}</td>
-                      <td className="py-2.5 px-3 font-mono text-[10px] text-slate-450 dark:text-slate-400">{patient.abha}</td>
+                      <td className="py-2.5 px-3 font-mono text-[10px] text-slate-500 dark:text-slate-400">{patient.abha}</td>
                       <td className="py-2.5 px-3 text-slate-400 dark:text-slate-500">{getDaysAgoText(patient.registrationDate)}</td>
                       <td className="py-2.5 pl-3 text-right">
                         <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold ${
                           patient.status === 'Active' 
-                            ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-150 dark:border-emerald-500/20' 
+                            ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20' 
                             : patient.status === 'In-Treatment'
-                            ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-150 dark:border-amber-500/20'
+                            ? 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-500/20'
                             : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
                         }`}>
                           {patient.status}
@@ -462,9 +462,9 @@ export default function OverviewTab() {
 
         {/* Dynamic Activities Feed */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 lg:col-span-3 space-y-3 shadow-sm text-left">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-150 dark:border-slate-800">
+          <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
             <h3 className="font-bold text-sm text-slate-800 dark:text-white font-heading">Recent Activities</h3>
-            <span className="text-[9px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold px-2 py-0.5 rounded border border-indigo-150 dark:border-indigo-500/20">LIVE FEED</span>
+            <span className="text-[9px] bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold px-2 py-0.5 rounded border border-indigo-100 dark:border-indigo-500/20">LIVE FEED</span>
           </div>
 
           <div className="space-y-3.5 max-h-[260px] overflow-y-auto pr-1">
@@ -480,9 +480,9 @@ export default function OverviewTab() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-slate-800 dark:text-slate-200 truncate leading-tight">{act.text}</p>
-                      <p className="text-[10px] text-slate-450 dark:text-slate-400 truncate mt-0.5">{act.subtext}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5">{act.subtext}</p>
                     </div>
-                    <span className="text-[9px] text-slate-450 dark:text-slate-500 font-mono shrink-0 pt-0.5">{getDaysAgoText(act.time)}</span>
+                    <span className="text-[9px] text-slate-400 dark:text-slate-500 font-mono shrink-0 pt-0.5">{getDaysAgoText(act.time)}</span>
                   </div>
                 );
               })
@@ -492,7 +492,7 @@ export default function OverviewTab() {
 
         {/* System Health / Infrastructure */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 lg:col-span-3 space-y-4 flex flex-col justify-between shadow-sm text-left">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-150 dark:border-slate-800">
+          <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
             <h3 className="font-bold text-sm text-slate-800 dark:text-white font-heading">System Infrastructure</h3>
             <span className="text-[9px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded border border-emerald-500/20 animate-pulse-soft">ONLINE</span>
           </div>
@@ -506,7 +506,7 @@ export default function OverviewTab() {
                 </span>
                 <span className="text-slate-800 dark:text-white font-mono">99.9%</span>
               </div>
-              <div className="h-1 w-full bg-slate-150 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-blue-500 rounded-full" style={{ width: '99.9%' }} />
               </div>
             </div>
@@ -519,7 +519,7 @@ export default function OverviewTab() {
                 </span>
                 <span className="text-slate-800 dark:text-white font-mono">{stats.activeSessions} Users</span>
               </div>
-              <div className="h-1 w-full bg-slate-150 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-teal-500 rounded-full" style={{ width: '65%' }} />
               </div>
             </div>
@@ -532,13 +532,13 @@ export default function OverviewTab() {
                 </span>
                 <span className="text-slate-800 dark:text-white font-mono">{stats.dataProcessed}</span>
               </div>
-              <div className="h-1 w-full bg-slate-150 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="h-1 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <div className="h-full bg-indigo-500 rounded-full" style={{ width: '42%' }} />
               </div>
             </div>
           </div>
 
-          <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850/80 rounded-xl p-2 text-center text-[10px] text-slate-500 font-semibold flex items-center justify-center gap-1.5">
+          <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-2 text-center text-[10px] text-slate-500 font-semibold flex items-center justify-center gap-1.5">
             <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
             National ABDM Gateway: <span className="text-emerald-500 font-bold font-mono">SECURE</span>
           </div>

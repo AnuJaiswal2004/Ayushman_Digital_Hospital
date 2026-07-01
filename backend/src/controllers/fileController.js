@@ -6,7 +6,8 @@ import path from 'path';
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     // Save to the uploads directory in root or backend/uploads
-    cb(null, 'backend/uploads/');
+    const uploadPath = process.cwd().endsWith('backend') ? 'uploads/' : 'backend/uploads/';
+    cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);

@@ -1,102 +1,94 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Receipt, User, Search, CreditCard, CheckCircle2, 
-  Printer, DollarSign, Activity, FileText, X, Sparkles
+  Receipt, Search, Calculator, Check, ArrowRight, Printer, AlertTriangle 
 } from 'lucide-react';
 import { apiService } from '../../../services/api.js';
+import Card from '../../../components/ui/Card.jsx';
+import Input from '../../../components/ui/Input.jsx';
+import Select from '../../../components/ui/Select.jsx';
+import Button from '../../../components/ui/Button.jsx';
+import Badge from '../../../components/ui/Badge.jsx';
+import Table from '../../../components/ui/Table.jsx';
 
 export default function BillingTab() {
   const [appointments, setAppointments] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [billingQueue, setBillingQueue] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Selected Billing Session
+  
+  // Selection states
   const [selectedAppt, setSelectedAppt] = useState(null);
-  const [charges, setCharges] = useState({
-    consultation: 500,
-    lab: 800,
-    registration: 100,
-    misc: 0
-  });
   const [paymentMethod, setPaymentMethod] = useState('upi');
-
-  // Completed Invoice Modal
   const [invoicePreview, setInvoicePreview] = useState(null);
 
-  const loadData = async () => {
-    const allAppts = await apiService.getAppointments();
-    const allPatients = await apiService.getPatients();
-    setAppointments(allAppts);
-    setPatients(allPatients);
+  // Billing Itemized Charges
+  const [charges, setCharges] = useState({
+    consultation: 350.00,
+    lab: 0.00,
+    registration: 100.00
+  });
 
-    // Filter appointments: status is 'completed', has no 'billing', and has consultation
-    const queue = allAppts.filter(a => a.status === 'completed' && !a.billing && a.consultation);
-    setBillingQueue(queue);
+  const loadData = async () => {
+    const listAppts = await apiService.getAppointments();
+    const listPatients = await apiService.getPatients();
+    setAppointments(listAppts);
+    setPatients(listPatients);
   };
 
   useEffect(() => {
     loadData();
   }, []);
 
+  // Filter completed appointments that have NO billing processed yet
+  const billingQueue = appointments.filter(a => a.status === 'completed' && !a.billing);
+
   const handleSelectPatient = (appt) => {
     setSelectedAppt(appt);
-    
-    // Auto-fill consultation to 500
-    // Auto-fill lab to 800 if they had a lab test or custom medications, otherwise default to 0 but editable
+    setInvoicePreview(null);
+
+    // Compute active lab tests
     const patientObj = patients.find(p => p.id === appt.patientId);
-    const hasLab = patientObj?.emr?.labTests?.length > 0 || appt.reason?.toLowerCase().includes('lab') || appt.reason?.toLowerCase().includes('test');
+    let labCharges = 0;
     
+    // Check if patient has EMR lab tests matching today
+    if (patientObj?.emr?.labTests) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const todayTests = patientObj.emr.labTests.filter(t => t.date === todayStr);
+      // Flat 450 per lab test roster fee
+      labCharges = todayTests.length * 450.00;
+    }
+
     setCharges({
-      consultation: 500,
-      lab: hasLab ? 800 : 0,
-      registration: 100,
-      misc: 0
+      consultation: 350.00,
+      lab: labCharges,
+      registration: appt.type === 'opd' ? 100.00 : 0.00
     });
-    setPaymentMethod('upi');
   };
 
-  // Live Auto-Calculations
-  const subtotal = Number(charges.consultation) + Number(charges.lab) + Number(charges.registration) + Number(charges.misc);
-  const gst = subtotal * 0.18; // 18% GST
-  const grandTotal = subtotal + gst;
-
-  const handleProcessBilling = async (e) => {
-    e.preventDefault();
+  const handleCheckout = async () => {
     if (!selectedAppt) return;
+    
+    const grandTotal = charges.consultation + charges.lab + charges.registration;
+    const invoiceNo = `AD-${Date.now().toString().slice(-6)}`;
 
     try {
-      const allAppts = JSON.parse(localStorage.getItem('appointments')) || [];
-      const idx = allAppts.findIndex(a => a.id === selectedAppt.id || a._id === selectedAppt.id);
+      const patientObj = patients.find(p => p.id === selectedAppt.patientId);
       
-      if (idx !== -1) {
-        const patientObj = patients.find(p => p.id === selectedAppt.patientId);
-        const abhaId = patientObj ? patientObj.abha : 'N/A';
-        const invoiceNo = 'INV-' + new Date().getFullYear() + '-' + String(allAppts.filter(a => a.billing).length + 1).padStart(4, '0');
-        
-        const billingData = {
-          invoiceNo,
-          patientName: selectedAppt.patientName,
-          abhaId,
-          charges: {
-            consultation: Number(charges.consultation),
-            lab: Number(charges.lab),
-            registration: Number(charges.registration),
-            misc: Number(charges.misc)
-          },
-          subtotal,
-          gst,
-          total: grandTotal,
-          paymentMethod,
-          paidAt: new Date().toISOString()
-        };
+      const billingData = {
+        invoiceNo,
+        patientId: selectedAppt.patientId,
+        patientName: selectedAppt.patientName,
+        abhaId: patientObj?.abha || 'N/A',
+        appointmentId: selectedAppt.id,
+        charges: { ...charges },
+        total: grandTotal,
+        paymentMethod,
+        paidAt: new Date().toISOString()
+      };
 
-        // Update appointment details in storage
-        allAppts[idx].billing = billingData;
-        // Mark status as completed (or keep completed, but now it has billing)
-        localStorage.setItem('appointments', JSON.stringify(allAppts));
-
-        // Add System Notification for Billing completed
+      const res = await apiService.processBillingCheckout(selectedAppt.id, billingData);
+      
+      if (res.success) {
+        // Roster checkout notifications
         await apiService.addNotification({
           title: '💰 Payment Received',
           message: `Dues paid successfully for ${selectedAppt.patientName}. Invoice: ${invoiceNo}.`,
@@ -104,7 +96,6 @@ export default function BillingTab() {
           targetRoles: ['admin', 'receptionist']
         });
 
-        // Add Patient Notification
         await apiService.addNotification({
           title: '💰 Payment Receipt Confirmed',
           message: `Your payment of ₹${grandTotal.toFixed(2)} is verified. Invoice #${invoiceNo} has been generated.`,
@@ -126,7 +117,8 @@ export default function BillingTab() {
   const handlePrintPDF = (inv) => {
     const printWindow = window.open('', '_blank', 'width=850,height=650');
     if (!printWindow) {
-      alert('Please allow popups to print invoices');
+      // Toast Fallback mechanims
+      alert('⚠️ POPUP BLOCKED: Please allow popups for this site in your browser to view and print the invoice receipt.');
       return;
     }
 
@@ -198,24 +190,18 @@ export default function BillingTab() {
                     <td class="py-4 px-4 text-right font-mono">₹${inv.charges.registration.toFixed(2)}</td>
                   </tr>
                 ` : ''}
-                ${inv.charges.misc > 0 ? `
-                  <tr>
-                    <td class="py-4 px-4 font-bold">Miscellaneous Pharmacy Charges</td>
-                    <td class="py-4 px-4 text-right font-mono">₹${inv.charges.misc.toFixed(2)}</td>
-                  </tr>
-                ` : ''}
               </tbody>
             </table>
 
             <!-- Summary Totals -->
-            <div class="border-t border-slate-250 pt-4 flex flex-col items-end text-xs font-semibold text-slate-500 gap-1.5 pr-4">
+            <div class="flex flex-col items-end border-t border-slate-100 pt-6 space-y-1.5 font-bold text-xs text-slate-500">
               <div class="flex gap-16 justify-between w-64">
                 <span>Subtotal:</span>
-                <span class="font-mono text-slate-700">₹${inv.subtotal.toFixed(2)}</span>
+                <span class="font-mono text-slate-700">₹${inv.total.toFixed(2)}</span>
               </div>
               <div class="flex gap-16 justify-between w-64">
-                <span>GST (18%):</span>
-                <span class="font-mono text-slate-700">₹${inv.gst.toFixed(2)}</span>
+                <span>GST Tax (0% CGST/SGST):</span>
+                <span class="font-mono text-slate-700">₹0.00</span>
               </div>
               <div class="flex gap-16 justify-between w-64 pt-2.5 border-t border-slate-200 font-black text-slate-800 text-sm">
                 <span>Grand Total:</span>
@@ -250,35 +236,34 @@ export default function BillingTab() {
   );
 
   return (
-    <div className="space-y-6 max-w-5xl w-full">
+    <div className="space-y-6 max-w-5xl w-full text-left">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* LEFT CARD: Billing Queue (lg:col-span-5) */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 lg:col-span-5 shadow-sm space-y-4">
-          <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-            <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-600">
+        <div className="elevated-surface p-6 lg:col-span-5 shadow-sm space-y-4 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-650 shrink-0">
               <Receipt className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-800 font-heading">Billing Desk Queue</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Process invoices for completed consultations</p>
+              <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Billing Desk Queue</h3>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Process invoices for completed consultations</p>
             </div>
           </div>
 
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
-            <input
+          <div className="w-full">
+            <Input
               type="text"
+              icon={Search}
               placeholder="Search active tokens..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs font-semibold outline-none focus:border-blue-500"
             />
           </div>
 
           <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
             {filteredQueue.length === 0 ? (
-              <p className="text-center py-8 text-slate-400 text-xs font-medium">No patients waiting in billing queue.</p>
+              <p className="text-center py-8 text-slate-400 dark:text-slate-500 text-xs font-medium">No patients waiting in billing queue.</p>
             ) : (
               filteredQueue.map(appt => {
                 const isSelected = selectedAppt?.id === appt.id;
@@ -286,21 +271,24 @@ export default function BillingTab() {
                   <div
                     key={appt.id}
                     onClick={() => handleSelectPatient(appt)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer text-left ${
+                    className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                       isSelected 
-                        ? 'bg-blue-50/50 border-blue-500/80 shadow-sm' 
-                        : 'bg-slate-50/40 border-slate-150 hover:bg-slate-50/90'
+                        ? 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-500/80 dark:border-blue-500/40 shadow-sm' 
+                        : 'bg-slate-50 dark:bg-slate-950 border-slate-150 dark:border-slate-850 hover:bg-slate-100/50 dark:hover:bg-slate-900/40'
                     }`}
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <span className="font-mono text-emerald-600 font-black text-[11px] block">{appt.token || 'OPD-N/A'}</span>
-                        <h4 className="font-extrabold text-xs text-slate-800 mt-1">{appt.patientName}</h4>
-                        <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Doctor: {appt.doctor}</p>
+                        <span className="font-mono text-emerald-600 dark:text-emerald-400 font-black text-[11px] block">{appt.token || 'OPD-N/A'}</span>
+                        <h4 className="font-extrabold text-xs text-slate-800 dark:text-white mt-1">{appt.patientName}</h4>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold mt-0.5">Doctor: {appt.doctor}</p>
                       </div>
-                      <span className="bg-amber-100 text-amber-700 text-[8px] font-black px-1.5 py-0.5 rounded border border-amber-200">
-                        BILLING PENDING
-                      </span>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <Badge variant="indigo">
+                          Checked Out
+                        </Badge>
+                        <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500">{appt.time}</span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -309,177 +297,166 @@ export default function BillingTab() {
           </div>
         </div>
 
-        {/* RIGHT CARD: Calculator & Form (lg:col-span-7) */}
+        {/* RIGHT CARD: Invoice Summary or Completed Preview (lg:col-span-7) */}
         <div className="lg:col-span-7 space-y-6">
           {selectedAppt ? (
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="pb-3 border-b border-slate-100 flex justify-between items-center">
-                <div>
-                  <h3 className="font-bold text-sm text-slate-800 font-heading">Invoice Calculator</h3>
-                  <p className="text-[10px] text-slate-400 font-medium">Generate transaction items for: <strong className="text-slate-700">{selectedAppt.patientName}</strong></p>
+            <Card className="space-y-5">
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-150 dark:border-slate-800">
+                <div className="bg-emerald-500/10 p-2.5 rounded-xl text-emerald-600 shrink-0">
+                  <Calculator className="h-5 w-5" />
                 </div>
-                <button 
-                  onClick={() => setSelectedAppt(null)}
-                  className="p-1 hover:bg-slate-100 rounded-full text-slate-400 cursor-pointer"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Calculate Patient Invoice</h3>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Configure itemized clinical dues</p>
+                </div>
               </div>
 
-              <form onSubmit={handleProcessBilling} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase">Consultation Fee (₹)</label>
-                    <input
-                      type="number"
-                      required
-                      min="0"
-                      value={charges.consultation}
-                      onChange={(e) => setCharges({ ...charges, consultation: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs outline-none font-semibold focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase">Lab Roster Charges (₹)</label>
-                    <input
-                      type="number"
-                      required
-                      min="0"
-                      value={charges.lab}
-                      onChange={(e) => setCharges({ ...charges, lab: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs outline-none font-semibold focus:border-blue-500"
-                    />
-                  </div>
+              {/* Patient brief info */}
+              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-250/10 dark:border-slate-800">
+                <div>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-550 font-bold block uppercase">Checked In Patient</span>
+                  <span className="text-slate-850 dark:text-white text-sm font-bold block mt-0.5">{selectedAppt.patientName}</span>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase">Registration Fee (₹)</label>
-                    <input
-                      type="number"
-                      required
-                      min="0"
-                      value={charges.registration}
-                      onChange={(e) => setCharges({ ...charges, registration: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs outline-none font-semibold focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-slate-400 uppercase">Misc / Pharmacy (₹)</label>
-                    <input
-                      type="number"
-                      required
-                      min="0"
-                      value={charges.misc}
-                      onChange={(e) => setCharges({ ...charges, misc: e.target.value })}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs outline-none font-semibold focus:border-blue-500"
-                    />
-                  </div>
+                <div>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-550 font-bold block uppercase">Diagnosed Roster Doc</span>
+                  <span className="text-slate-850 dark:text-white block mt-0.5">{selectedAppt.doctor} ({selectedAppt.department})</span>
                 </div>
+              </div>
 
-                {/* Sub-totals display */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 text-xs font-semibold text-slate-550 space-y-2">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span className="font-mono text-slate-700">₹{subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>GST (18%):</span>
-                    <span className="font-mono text-slate-700">₹{gst.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between pt-2 border-t border-slate-200 font-black text-slate-800 text-sm">
-                    <span>Total Bill:</span>
-                    <span className="font-mono text-emerald-650">₹{grandTotal.toFixed(2)}</span>
-                  </div>
+              {/* Bill Details */}
+              <div className="space-y-3.5">
+                <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Itemized Roster Charges (INR)</h4>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <Input
+                    label="Consultation Fee"
+                    type="number"
+                    value={charges.consultation}
+                    onChange={(e) => setCharges({ ...charges, consultation: parseFloat(e.target.value) || 0 })}
+                  />
+
+                  <Input
+                    label="Lab Diagnostics Fee"
+                    type="number"
+                    value={charges.lab}
+                    onChange={(e) => setCharges({ ...charges, lab: parseFloat(e.target.value) || 0 })}
+                  />
+
+                  <Input
+                    label="Registration Fee"
+                    type="number"
+                    value={charges.registration}
+                    onChange={(e) => setCharges({ ...charges, registration: parseFloat(e.target.value) || 0 })}
+                  />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-bold text-slate-400 uppercase">Payment Mode</label>
-                  <select
+                  <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Payment Channel</label>
+                  <Select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-semibold outline-none cursor-pointer text-slate-750"
+                    options={[
+                      { value: 'upi', label: 'BHIM UPI QR' },
+                      { value: 'card', label: 'Debit / Credit Card' },
+                      { value: 'cash', label: 'Cash Desk' },
+                      { value: 'insurance', label: 'PM-JAY Ayushman Card Scheme' }
+                    ]}
+                  />
+                </div>
+              </div>
+
+              {/* Total Summary */}
+              <div className="border-t border-slate-150 dark:border-slate-800 pt-4.5 flex justify-between items-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <div>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Grand total</span>
+                  <span className="text-lg font-black text-slate-800 dark:text-white font-mono">
+                    ₹{(charges.consultation + charges.lab + charges.registration).toFixed(2)}
+                  </span>
+                </div>
+                
+                <Button
+                  onClick={handleCheckout}
+                  variant="primary"
+                  className="px-6 py-2.5 text-xs font-semibold shrink-0"
+                >
+                  Confirm & Discharge <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </Card>
+          ) : invoicePreview ? (
+            <Card className="space-y-5">
+              <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/30 p-4 rounded-xl flex items-start gap-3.5 text-xs font-semibold text-emerald-800 dark:text-emerald-400">
+                <Check className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-extrabold">Invoice paid & patient discharged.</h4>
+                  <p className="text-[10px] text-emerald-650 dark:text-emerald-500 font-medium mt-0.5">Invoice #{invoicePreview.invoiceNo} successfully generated on National ABDM network.</p>
+                </div>
+              </div>
+
+              {/* Invoice brief review */}
+              <div className="border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+                <div className="flex justify-between items-start pb-4.5 border-b border-slate-100 dark:border-slate-800">
+                  <div>
+                    <h4 className="font-black text-slate-850 dark:text-white text-base font-heading">Invoice Receipt Details</h4>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-550 font-mono mt-0.5">ID: #{invoicePreview.invoiceNo}</p>
+                  </div>
+                  <Button
+                    onClick={() => handlePrintPDF(invoicePreview)}
+                    variant="outline"
+                    className="flex items-center gap-1.5 py-1.5 px-3"
                   >
-                    <option value="upi">UPI / QR Code Scan</option>
-                    <option value="cash">Cash Payment</option>
-                    <option value="card">Credit / Debit Card</option>
-                    <option value="insurance">Insurance Roster Billing</option>
-                  </select>
+                    <Printer className="h-4 w-4" /> Print PDF
+                  </Button>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-md cursor-pointer text-xs"
-                >
-                  Generate Invoice & Discharge Patient
-                </button>
-              </form>
-            </div>
+                <div className="space-y-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                  <div className="flex justify-between">
+                    <span>Patient Name</span>
+                    <span className="text-slate-800 dark:text-white font-bold">{invoicePreview.patientName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>ABHA Health ID</span>
+                    <span className="text-slate-800 dark:text-white font-mono">{invoicePreview.abhaId}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Payment Channel</span>
+                    <span className="text-indigo-650 dark:text-indigo-400 uppercase font-black">{invoicePreview.paymentMethod}</span>
+                  </div>
+                  
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-1.5">
+                    <div className="flex justify-between text-[10px]">
+                      <span>Consultation Fee</span>
+                      <span className="font-mono text-slate-700 dark:text-slate-300">₹{invoicePreview.charges.consultation.toFixed(2)}</span>
+                    </div>
+                    {invoicePreview.charges.lab > 0 && (
+                      <div className="flex justify-between text-[10px]">
+                        <span>Lab Diagnostics</span>
+                        <span className="font-mono text-slate-700 dark:text-slate-300">₹{invoicePreview.charges.lab.toFixed(2)}</span>
+                      </div>
+                    )}
+                    {invoicePreview.charges.registration > 0 && (
+                      <div className="flex justify-between text-[10px]">
+                        <span>Registration Fee</span>
+                        <span className="font-mono text-slate-700 dark:text-slate-300">₹{invoicePreview.charges.registration.toFixed(2)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-800 text-sm">
+                    <span className="text-slate-800 dark:text-white font-black">Grand Total Paid</span>
+                    <span className="font-black text-emerald-600 dark:text-emerald-400 font-mono text-base">₹{invoicePreview.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
           ) : (
-            <div className="text-center py-20 bg-white border border-slate-200 rounded-2xl text-slate-400 font-medium text-xs shadow-sm">
-              Select a patient from the pending queue to generate an invoice.
+            <div className="text-center py-20 card-surface border border-slate-200 dark:border-slate-800 shadow-sm text-slate-400 dark:text-slate-500 font-medium">
+              Select a checked-out patient to calculate billing dues.
             </div>
           )}
         </div>
+
       </div>
-
-      {/* Invoice Preview Modal */}
-      {invoicePreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 relative space-y-4">
-            
-            {/* Modal close */}
-            <button 
-              onClick={() => setInvoicePreview(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-800 p-1 hover:bg-slate-50 rounded-full cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="text-center pb-2 border-b border-slate-100">
-              <Sparkles className="h-6 w-6 text-emerald-650 mx-auto mb-2" />
-              <h3 className="text-sm font-black text-slate-800 font-heading">Payment Verified</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Invoice generated successfully</p>
-            </div>
-
-            {/* Receipt Summary */}
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100/60 text-xs font-semibold text-slate-600 space-y-2">
-              <div className="flex justify-between">
-                <span>Invoice No:</span>
-                <span className="font-mono text-slate-800">{invoicePreview.invoiceNo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Patient:</span>
-                <span className="text-slate-800 font-bold">{invoicePreview.patientName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Method:</span>
-                <span className="text-indigo-650 font-bold uppercase">{invoicePreview.paymentMethod}</span>
-              </div>
-              <div className="flex justify-between pt-2 border-t border-slate-200/80 font-black text-slate-800 text-sm">
-                <span>Grand Total:</span>
-                <span className="font-mono text-emerald-650">₹{invoicePreview.total.toFixed(2)}</span>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setInvoicePreview(null)}
-                className="bg-slate-200 hover:bg-slate-250 text-slate-700 font-bold px-4 py-3 rounded-xl text-xs cursor-pointer flex-1"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => handlePrintPDF(invoicePreview)}
-                className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold px-4 py-3 rounded-xl text-xs cursor-pointer flex-1 flex items-center justify-center gap-1.5 shadow-md shadow-indigo-600/10"
-              >
-                <Printer className="h-4 w-4" /> Print / Export PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -7,9 +7,14 @@ import ReceptionTab from './tabs/ReceptionTab.jsx';
 import EMRTab from './tabs/EMRTab.jsx';
 import BillingTab from './tabs/BillingTab.jsx';
 import ThemeToggle from '../../components/ThemeToggle.jsx';
+import { useTheme } from '../../services/theme.js';
+import { getChartColors } from '../../services/chartTheme.js';
 
 export default function StaffDashboard() {
   const navigate = useNavigate();
+  const [theme] = useTheme();
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const chartColors = getChartColors(isDark);
   const [activeTab, setActiveTab] = useState('overview');
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -1470,27 +1475,27 @@ export default function StaffDashboard() {
 
             {/* Doctors Clinical Team Directory Tab (Doctor View-Only, Receptionist No Access) */}
             {activeTab === 'doctors' && currentUser.role === 'doctor' && (
-              <div className="bg-white border border-slate-200/80 rounded-2xl p-6 space-y-4 shadow-sm">
+              <div className="card-surface p-6 space-y-4 shadow-sm">
                 <div>
-                  <h3 className="font-bold text-base text-slate-850 font-heading">Clinical Medical Team</h3>
-                  <p className="text-xs text-slate-400 font-medium">Verify credentials and specialist rosters</p>
+                  <h3 className="font-bold text-base text-slate-800 dark:text-white font-heading">Clinical Medical Team</h3>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 font-medium">Verify credentials and specialist rosters</p>
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs text-left">
+                <div className="overflow-x-auto border border-slate-200 dark:border-slate-800 rounded-xl">
+                  <table className="w-full text-xs text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-200 text-[10px] font-bold text-slate-450 uppercase tracking-wider">
-                        <th className="pb-3">Doctor</th>
-                        <th className="pb-3">Specialization</th>
-                        <th className="pb-3">Department</th>
-                        <th className="pb-3">Experience</th>
-                        <th className="pb-3 text-right">Status</th>
+                      <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider bg-slate-50/50 dark:bg-slate-900/40">
+                        <th className="py-3.5 px-4">Doctor</th>
+                        <th className="py-3.5 px-4">Specialization</th>
+                        <th className="py-3.5 px-4">Department</th>
+                        <th className="py-3.5 px-4">Experience</th>
+                        <th className="py-3.5 px-4 text-right">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-medium text-slate-655">
+                    <tbody className="divide-y divide-slate-150 dark:divide-slate-800/60 font-medium text-slate-600 dark:text-slate-350">
                       {doctors.map(d => (
-                        <tr key={d.id} className="hover:bg-slate-50">
-                          <td className="py-3 font-bold text-slate-800">{d.name}</td>
+                        <tr key={d.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
+                          <td className="py-3 px-4 font-bold text-slate-800 dark:text-white">{d.name}</td>
                           <td className="py-3 text-slate-600">{d.specialization}</td>
                           <td className="py-3 text-slate-400 capitalize">{d.department}</td>
                           <td className="py-3 text-slate-500">{d.experience}</td>
@@ -1528,8 +1533,8 @@ export default function StaffDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Completion Chart */}
-                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 space-y-4 flex flex-col justify-between shadow-sm">
-                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Completion Success Index</h4>
+                  <div className="card-surface p-6 space-y-4 flex flex-col justify-between shadow-sm">
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Completion Success Index</h4>
                     <div className="h-44 w-full relative flex items-center justify-center">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
@@ -1546,31 +1551,31 @@ export default function StaffDashboard() {
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip contentStyle={{ fontSize: 11 }} />
+                          <Tooltip contentStyle={{ backgroundColor: chartColors.tooltipBg, borderColor: chartColors.tooltipBorder, borderRadius: 8, color: chartColors.tooltipText, fontSize: 11 }} />
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="flex gap-4 justify-center text-[10px] font-semibold text-slate-400 pt-2 border-t border-slate-100">
+                    <div className="flex gap-4 justify-center text-[10px] font-semibold text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
                       {doctorAnalytics.completionData.map(item => (
                         <div key={item.name} className="flex items-center gap-1.5">
                           <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                          <span>{item.name}: <strong className="text-slate-800">{item.value}</strong></span>
+                          <span>{item.name}: <strong className="text-slate-800 dark:text-white font-mono">{item.value}</strong></span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Consultation Type Chart */}
-                  <div className="bg-white border border-slate-200/80 rounded-2xl p-6 space-y-4 flex flex-col justify-between shadow-sm">
-                    <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Consultation Outlets</h4>
+                  <div className="card-surface p-6 space-y-4 flex flex-col justify-between shadow-sm">
+                    <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Consultation Outlets</h4>
                     <div className="h-44 w-full relative flex items-center justify-center">
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={doctorAnalytics.consultTypeData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                          <XAxis dataKey="name" style={{ fontSize: 9 }} />
-                          <YAxis style={{ fontSize: 9 }} />
-                          <Tooltip contentStyle={{ fontSize: 11 }} />
-                          <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={chartColors.grid} />
+                          <XAxis dataKey="name" stroke={chartColors.axisText} style={{ fontSize: 9 }} />
+                          <YAxis stroke={chartColors.axisText} style={{ fontSize: 9 }} />
+                          <Tooltip contentStyle={{ backgroundColor: chartColors.tooltipBg, borderColor: chartColors.tooltipBorder, borderRadius: 8, color: chartColors.tooltipText, fontSize: 11 }} />
+                          <Bar dataKey="value" fill={chartColors.indigo} radius={[4, 4, 0, 0]}>
                             {doctorAnalytics.consultTypeData.map((entry, index) => (
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
@@ -1578,8 +1583,8 @@ export default function StaffDashboard() {
                         </BarChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="text-center text-[10px] font-bold text-slate-400 pt-2 border-t border-slate-100">
-                      Total Roster Consultations: <strong className="text-slate-800">{doctorAnalytics.total}</strong>
+                    <div className="text-center text-[10px] font-bold text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-100 dark:border-slate-800">
+                      Total Consultations: <strong className="text-slate-800 dark:text-white font-mono">{doctorAnalytics.total}</strong>
                     </div>
                   </div>
                 </div>
@@ -1599,38 +1604,38 @@ export default function StaffDashboard() {
 
                 <form onSubmit={handlePasswordChange} className="space-y-4">
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-450 uppercase">Current Password</label>
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Current Password</label>
                     <input
                       type="password"
                       required
                       value={securityForm.oldPassword}
                       onChange={(e) => setSecurityForm({ ...securityForm, oldPassword: e.target.value })}
                       placeholder="Enter current password"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-emerald-500"
+                      className="w-full input-surface"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-450 uppercase">New Password</label>
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">New Password</label>
                     <input
                       type="password"
                       required
                       value={securityForm.newPassword}
                       onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
                       placeholder="Enter new password"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-emerald-500"
+                      className="w-full input-surface"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-450 uppercase">Confirm New Password</label>
+                    <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Confirm New Password</label>
                     <input
                       type="password"
                       required
                       value={securityForm.confirmPassword}
                       onChange={(e) => setSecurityForm({ ...securityForm, confirmPassword: e.target.value })}
                       placeholder="Confirm new password"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-medium outline-none focus:border-emerald-500"
+                      className="w-full input-surface"
                     />
                   </div>
 

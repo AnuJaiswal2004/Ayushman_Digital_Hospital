@@ -622,7 +622,7 @@ export default function ReportsTab() {
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h3 className="font-extrabold text-sm text-slate-900 dark:text-white font-heading">Reports & Clinical Analytics</h3>
-          <p className="text-[10px] text-slate-400 dark:text-slate-450 font-bold uppercase tracking-wider mt-0.5">Generate, audit, and export patient files and revenue parameters</p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-wider mt-0.5">Generate, audit, and export patient files and revenue parameters</p>
         </div>
 
         {/* Buttons to select reports */}
@@ -845,19 +845,19 @@ export default function ReportsTab() {
                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest block">Last Recorded Body Stats</span>
                     <div className="grid grid-cols-4 gap-3 text-center">
                       <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80">
-                        <span className="text-[8px] text-slate-400 dark:text-slate-450 block uppercase font-bold">BP</span>
+                        <span className="text-[8px] text-slate-400 dark:text-slate-400 block uppercase font-bold">BP</span>
                         <span className="text-slate-800 dark:text-white text-xs font-black font-mono block mt-1">{activePatient.emr?.bloodPressure || 'N/A'}</span>
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80">
-                        <span className="text-[8px] text-slate-400 dark:text-slate-450 block uppercase font-bold">Sugar</span>
+                        <span className="text-[8px] text-slate-400 dark:text-slate-400 block uppercase font-bold">Sugar</span>
                         <span className="text-slate-800 dark:text-white text-xs font-black font-mono block mt-1">{activePatient.emr?.sugar || 'N/A'}</span>
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80">
-                        <span className="text-[8px] text-slate-400 dark:text-slate-450 block uppercase font-bold">Weight</span>
+                        <span className="text-[8px] text-slate-400 dark:text-slate-400 block uppercase font-bold">Weight</span>
                         <span className="text-slate-800 dark:text-white text-xs font-black font-mono block mt-1">{activePatient.emr?.weight ? activePatient.emr.weight + ' kg' : 'N/A'}</span>
                       </div>
                       <div className="bg-slate-50 dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800/80">
-                        <span className="text-[8px] text-slate-400 dark:text-slate-450 block uppercase font-bold">Height</span>
+                        <span className="text-[8px] text-slate-400 dark:text-slate-400 block uppercase font-bold">Height</span>
                         <span className="text-slate-800 dark:text-white text-xs font-black font-mono block mt-1">{activePatient.emr?.height ? activePatient.emr.height + ' cm' : 'N/A'}</span>
                       </div>
                     </div>
@@ -1046,7 +1046,7 @@ export default function ReportsTab() {
                 </div>
               </div>
 
-              <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-450 text-center border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
+              <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 text-center border-t border-slate-100 dark:border-slate-800 pt-4 mt-2">
                 Metrics dynamically consolidated based on checking active patient consultation indices in EMR.
               </div>
             </div>

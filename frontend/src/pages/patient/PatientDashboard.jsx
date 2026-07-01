@@ -532,46 +532,46 @@ export default function PatientDashboard() {
 
                 {/* Change Password Card */}
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-6 space-y-5">
-                  <h3 className="font-bold text-base text-slate-850 mb-1 font-heading">Security Settings</h3>
-                  <p className="text-xs text-slate-400 font-medium font-sans">Update password for patient locker login</p>
+                  <h3 className="font-bold text-base text-slate-800 dark:text-white mb-1 font-heading">Security Settings</h3>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 font-medium font-sans">Update password for patient locker login</p>
                   
-                  {securityError && <div className="bg-rose-100 border border-rose-250 text-rose-700 text-xs p-3.5 rounded-xl font-medium">{securityError}</div>}
-                  {securitySuccess && <div className="bg-emerald-100 border border-emerald-250 text-emerald-700 text-xs p-3.5 rounded-xl font-medium">{securitySuccess}</div>}
+                  {securityError && <div className="bg-rose-50 dark:bg-rose-950/20 border border-rose-250 dark:border-rose-900/30 text-rose-700 dark:text-rose-400 text-xs p-3 rounded-xl font-medium">{securityError}</div>}
+                  {securitySuccess && <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-250 dark:border-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs p-3 rounded-xl font-medium">{securitySuccess}</div>}
 
                   <form onSubmit={handlePasswordChange} className="space-y-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-450 uppercase">Current Password</label>
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Current Password</label>
                       <input
                         type="password"
                         required
                         value={securityForm.oldPassword}
                         onChange={(e) => setSecurityForm({ ...securityForm, oldPassword: e.target.value })}
                         placeholder="Enter current password"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-medium outline-none focus:border-blue-500"
+                        className="w-full input-surface"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-455 uppercase">New Password</label>
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">New Password</label>
                       <input
                         type="password"
                         required
                         value={securityForm.newPassword}
                         onChange={(e) => setSecurityForm({ ...securityForm, newPassword: e.target.value })}
                         placeholder="Create new password"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-medium outline-none focus:border-blue-500"
+                        className="w-full input-surface"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-455 uppercase">Confirm Password</label>
+                      <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Confirm Password</label>
                       <input
                         type="password"
                         required
                         value={securityForm.confirmPassword}
                         onChange={(e) => setSecurityForm({ ...securityForm, confirmPassword: e.target.value })}
                         placeholder="Confirm new password"
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-medium outline-none focus:border-blue-500"
+                        className="w-full input-surface"
                       />
                     </div>
 

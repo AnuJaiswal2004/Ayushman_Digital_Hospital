@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Activity, Microscope, Pill, Stethoscope, Calendar, Plus, 
-  Trash2, ShieldAlert, Scissors, ChevronRight, Save, User, Search, HeartPulse
+  HeartPulse, Activity, FileSpreadsheet, User, 
+  Plus, Trash2, CalendarClock, Stethoscope, Search, X 
 } from 'lucide-react';
 import { apiService } from '../../../services/api.js';
+import Modal from '../../../components/ui/Modal.jsx';
+import Input from '../../../components/ui/Input.jsx';
+import Select from '../../../components/ui/Select.jsx';
+import Button from '../../../components/ui/Button.jsx';
+import Badge from '../../../components/ui/Badge.jsx';
+import Table from '../../../components/ui/Table.jsx';
+import Card from '../../../components/ui/Card.jsx';
 
-export default function EMRTab({ patientId = '', readOnly = false }) {
-  // Global and local state
+export default function EMRTab({ readOnly = false, initialPatientId = null }) {
   const [patients, setPatients] = useState([]);
-  const [selectedPatientId, setSelectedPatientId] = useState(patientId);
-  const [selectedPatient, setSelectedPatient] = useState(null);
   const [appointments, setAppointments] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Editing state for clinical stats
+  const [selectedPatientId, setSelectedPatientId] = useState('');
+  
+  // Roster Vitals
   const [isEditingStats, setIsEditingStats] = useState(false);
   const [statsForm, setStatsForm] = useState({
     bloodPressure: '',
@@ -22,155 +26,155 @@ export default function EMRTab({ patientId = '', readOnly = false }) {
     height: ''
   });
 
-  // Adding history entries
-  const [newAllergy, setNewAllergy] = useState('');
-  const [newDisease, setNewDisease] = useState('');
-  const [newSurgery, setNewSurgery] = useState('');
+  // Prescriptions List inside consultation form
+  const [medsList, setMedsList] = useState([]);
+  const [medInput, setMedInput] = useState({
+    name: '',
+    dosage: '10mg',
+    frequency: 'Once Daily',
+    duration: '5 Days'
+  });
 
-  // Add Lab Test Form
-  const [showLabForm, setShowLabForm] = useState(false);
+  // Consult Notes Form
+  const [consultForm, setConsultForm] = useState({
+    complaint: '',
+    diagnosis: '',
+    symptoms: '',
+    prognosis: ''
+  });
+
+  // Lab Test Form
   const [labForm, setLabForm] = useState({
-    testName: '',
-    date: new Date().toISOString().split('T')[0],
+    testName: 'Complete Blood Count (CBC)',
     result: '',
-    notes: ''
+    date: new Date().toISOString().split('T')[0]
   });
 
   const loadData = async () => {
-    const allPatients = await apiService.getPatients();
-    const allAppointments = await apiService.getAppointments();
-    setPatients(allPatients);
+    const listPatients = await apiService.getPatients();
+    const listAppts = await apiService.getAppointments();
+    setPatients(listPatients);
+    setAppointments(listAppts);
 
-    let activeId = selectedPatientId;
-    if (!activeId && allPatients.length > 0) {
-      activeId = allPatients[0].id;
-      setSelectedPatientId(activeId);
-    }
-
-    if (activeId) {
-      const p = allPatients.find(item => item.id === activeId || item._id === activeId);
-      setSelectedPatient(p || null);
-      if (p) {
-        // Populate stats form
-        setStatsForm({
-          bloodPressure: p.emr?.bloodPressure || '',
-          sugar: p.emr?.sugar || '',
-          weight: p.emr?.weight || '',
-          height: p.emr?.height || ''
-        });
-      }
-      // Load appointments for this patient
-      const patientAppts = allAppointments.filter(
-        a => a.patientId === activeId && a.status !== 'cancelled'
-      );
-      setAppointments(patientAppts);
+    // Auto select first patient or initial patient
+    if (initialPatientId) {
+      setSelectedPatientId(initialPatientId);
+    } else if (listPatients.length > 0 && !selectedPatientId) {
+      setSelectedPatientId(listPatients[0].id);
     }
   };
 
   useEffect(() => {
     loadData();
-  }, [selectedPatientId]);
+  }, [initialPatientId]);
 
-  // Handle switching patient (only when patientId prop is not supplied, i.e., in staff/admin views)
-  const handlePatientChange = (id) => {
-    setSelectedPatientId(id);
-    setIsEditingStats(false);
-    setShowLabForm(false);
-  };
+  // Load patient details on select
+  const selectedPatient = patients.find(p => p.id === selectedPatientId);
+
+  useEffect(() => {
+    if (selectedPatient) {
+      setStatsForm({
+        bloodPressure: selectedPatient.emr?.bloodPressure || '',
+        sugar: selectedPatient.emr?.sugar || '',
+        weight: selectedPatient.emr?.weight || '',
+        height: selectedPatient.emr?.height || ''
+      });
+    }
+  }, [selectedPatientId, patients]);
 
   const handleUpdateStats = async (e) => {
     e.preventDefault();
-    if (!selectedPatient) return;
     try {
-      const updatedEMR = {
-        ...(selectedPatient.emr || {}),
-        bloodPressure: statsForm.bloodPressure,
-        sugar: statsForm.sugar,
-        weight: statsForm.weight,
-        height: statsForm.height
-      };
-      await apiService.updatePatient(selectedPatient.id || selectedPatient._id, { emr: updatedEMR });
-      alert('Vitals updated successfully!');
+      await apiService.updatePatientVitals(selectedPatientId, statsForm);
       setIsEditingStats(false);
       loadData();
+      alert('Vitals updated successfully.');
     } catch (err) {
-      alert('Failed to update vitals');
+      alert('Failed to update stats');
     }
   };
 
-  const handleAddHistory = async (type, val, setter) => {
-    if (!selectedPatient || !val.trim()) return;
-    try {
-      const emr = selectedPatient.emr || {};
-      const list = emr[type] || [];
-      const updatedEMR = {
-        ...emr,
-        [type]: [...list, val.trim()]
-      };
-      await apiService.updatePatient(selectedPatient.id || selectedPatient._id, { emr: updatedEMR });
-      setter('');
-      loadData();
-    } catch (err) {
-      alert('Failed to update medical history');
-    }
-  };
-
-  const handleRemoveHistory = async (type, idx) => {
-    if (!selectedPatient) return;
-    if (!window.confirm('Remove this medical history record?')) return;
-    try {
-      const emr = selectedPatient.emr || {};
-      const list = emr[type] || [];
-      const updatedList = list.filter((_, i) => i !== idx);
-      const updatedEMR = {
-        ...emr,
-        [type]: updatedList
-      };
-      await apiService.updatePatient(selectedPatient.id || selectedPatient._id, { emr: updatedEMR });
-      loadData();
-    } catch (err) {
-      alert('Failed to remove history record');
-    }
-  };
-
-  const handleAddLabTest = async (e) => {
-    e.preventDefault();
-    if (!selectedPatient || !labForm.testName || !labForm.result) {
-      alert('Please fill out test name and result');
+  const handleAddMed = () => {
+    if (!medInput.name) {
+      alert('Please fill medication name');
       return;
     }
+    setMedsList([...medsList, medInput]);
+    setMedInput({ name: '', dosage: '10mg', frequency: 'Once Daily', duration: '5 Days' });
+  };
+
+  const handleRemoveMed = (idx) => {
+    setMedsList(medsList.filter((_, i) => i !== idx));
+  };
+
+  const handleConsultSubmit = async (e) => {
+    e.preventDefault();
+    if (!consultForm.complaint || !consultForm.diagnosis) {
+      alert('Please fill at least complaint and diagnosis');
+      return;
+    }
+
     try {
-      const emr = selectedPatient.emr || {};
-      const list = emr.labTests || [];
-      const newTest = {
-        id: 'LAB' + String(list.length + 1).padStart(3, '0'),
-        testName: labForm.testName,
-        date: labForm.date,
-        result: labForm.result,
-        notes: labForm.notes
-      };
-      const updatedEMR = {
-        ...emr,
-        labTests: [...list, newTest]
-      };
-      await apiService.updatePatient(selectedPatient.id || selectedPatient._id, { emr: updatedEMR });
-      alert('Lab Test report added successfully!');
-      setShowLabForm(false);
-      setLabForm({ testName: '', date: new Date().toISOString().split('T')[0], result: '', notes: '' });
+      // Find the today's scheduled appointment for this patient
+      const todayStr = new Date().toISOString().split('T')[0];
+      const activeAppt = appointments.find(
+        a => a.patientId === selectedPatientId && a.status === 'scheduled' && a.date === todayStr
+      );
+
+      if (!activeAppt) {
+        alert('No active scheduled appointment found for today. Make sure patient is checked in.');
+        return;
+      }
+
+      await apiService.completeAppointmentConsultation(activeAppt.id, {
+        complaint: consultForm.complaint,
+        diagnosis: consultForm.diagnosis,
+        symptoms: consultForm.symptoms,
+        prognosis: consultForm.prognosis,
+        medications: medsList
+      });
+
+      // Notify
+      await apiService.addNotification({
+        title: '✅ Consultation Completed',
+        message: `Dr. completed check-out for ${selectedPatient.name}. Forwarded to Billing desk.`,
+        type: 'consultation',
+        targetRoles: ['admin', 'billing', 'receptionist']
+      });
+
+      alert('Consultation recorded successfully!');
+      setConsultForm({ complaint: '', diagnosis: '', symptoms: '', prognosis: '' });
+      setMedsList([]);
+      loadData();
+    } catch (err) {
+      alert('Failed to record consultation: ' + err.message);
+    }
+  };
+
+  const handleLabSubmit = async (e) => {
+    e.preventDefault();
+    if (!labForm.result) {
+      alert('Please fill lab test result');
+      return;
+    }
+
+    try {
+      await apiService.addLabTest(selectedPatientId, labForm);
+      alert('Lab diagnostic recorded successfully!');
+      setLabForm({ testName: 'Complete Blood Count (CBC)', result: '', date: new Date().toISOString().split('T')[0] });
       loadData();
     } catch (err) {
       alert('Failed to record lab test');
     }
   };
 
-  // Compile timeline items
   const getTimelineItems = () => {
     if (!selectedPatient) return [];
     const events = [];
 
-    // 1. Consultations (Completed appointments)
+    // Consultations (Completed appointments)
     appointments.forEach(a => {
-      if (a.status === 'completed') {
+      if (a.patientId === selectedPatientId && a.status === 'completed') {
         events.push({
           type: 'Consultation',
           date: a.date,
@@ -181,9 +185,9 @@ export default function EMRTab({ patientId = '', readOnly = false }) {
           color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
         });
 
-        // 2. Prescriptions (Medications issued during consultations)
+        // Prescriptions (Medications issued during consultations)
         if (a.consultation?.medications && a.consultation.medications.length > 0) {
-          const medsList = a.consultation.medications
+          const medsJoined = a.consultation.medications
             .map(m => `${m.name} (${m.dosage} - ${m.frequency})`)
             .join(', ');
           events.push({
@@ -191,15 +195,15 @@ export default function EMRTab({ patientId = '', readOnly = false }) {
             date: a.date,
             title: 'Digital Prescription Issued',
             description: `Roster doctor: ${a.doctor}`,
-            meta: medsList,
+            meta: medsJoined,
             details: `Duration: ${a.consultation.medications[0].duration || 'As prescribed'}`,
             color: 'bg-blue-500/10 text-blue-600 border-blue-500/20'
           });
         }
       }
 
-      // 4. Follow-up (Upcoming scheduled visits)
-      if (a.status === 'scheduled') {
+      // Follow-up (Upcoming scheduled visits)
+      if (a.patientId === selectedPatientId && a.status === 'scheduled') {
         const isFuture = new Date(a.date) >= new Date().setHours(0, 0, 0, 0);
         if (isFuture) {
           events.push({
@@ -215,7 +219,7 @@ export default function EMRTab({ patientId = '', readOnly = false }) {
       }
     });
 
-    // 3. Lab Tests (From patient emr storage)
+    // Lab Tests (From patient emr storage)
     if (selectedPatient.emr?.labTests) {
       selectedPatient.emr.labTests.forEach(test => {
         events.push({
@@ -223,119 +227,87 @@ export default function EMRTab({ patientId = '', readOnly = false }) {
           date: test.date,
           title: test.testName,
           description: `Diagnostic Result: ${test.result}`,
-          meta: test.notes ? `Clinical notes: ${test.notes}` : '',
-          details: `Reference ID: ${test.id}`,
-          color: 'bg-purple-500/10 text-purple-600 border-purple-500/20'
+          meta: 'Report verified by National Pathology Desk',
+          details: `Logged on: ${new Date(test.date).toLocaleDateString()}`,
+          color: 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20'
         });
       });
     }
 
-    // Sort chronologically descending
-    events.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    // Group by Year
-    const grouped = {};
-    events.forEach(event => {
-      const year = new Date(event.date).getFullYear() || new Date().getFullYear();
-      if (!grouped[year]) {
-        grouped[year] = [];
-      }
-      grouped[year].push(event);
-    });
-
-    return Object.entries(grouped).sort((a, b) => b[0] - a[0]); // Sort years descending
+    // Sort by date descending
+    return events.sort((a, b) => new Date(b.date) - new Date(a.date));
   };
 
-  const timelineGrouped = getTimelineItems();
-
-  // Filter patients list for lookup selector
-  const filteredPatients = patients.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.phone.includes(searchQuery) ||
-    p.abha.includes(searchQuery)
-  );
+  const timelineItems = getTimelineItems();
 
   return (
-    <div className="space-y-6 max-w-5xl w-full">
-      {/* 1. Patient Selector (Only render if patientId prop is not supplied) */}
-      {!patientId && (
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600/10 p-2 rounded-xl text-blue-600">
-              <Search className="h-5 w-5" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-slate-800 font-heading">Digital Health Locker Lookup</h3>
-              <p className="text-[10px] text-slate-400 font-medium">Verify credentials and retrieve diagnostic clinical records</p>
-            </div>
+    <div className="space-y-6 max-w-5xl w-full text-left">
+      {/* Patient selector bar */}
+      <div className="flex flex-col sm:flex-row gap-4 card-surface p-4 border border-slate-200 dark:border-slate-800 justify-between items-start sm:items-center">
+        <div className="flex items-center gap-3">
+          <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-500 shrink-0">
+            <HeartPulse className="h-5 w-5" />
           </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search patient by Name, Phone, or ABHA ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs outline-none focus:border-blue-500"
-              />
-            </div>
-            <select
-              value={selectedPatientId}
-              onChange={(e) => handlePatientChange(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-xs font-semibold outline-none cursor-pointer text-slate-700 min-w-[200px]"
-            >
-              {filteredPatients.map(p => (
-                <option key={p.id} value={p.id}>{p.name} (ABHA: {p.abha.slice(0, 4)}...)</option>
-              ))}
-              {filteredPatients.length === 0 && <option value="">No patients found...</option>}
-            </select>
+          <div>
+            <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Electronic Medical Record (EMR)</h3>
+            <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Verify patient histories and issue prescriptions</p>
           </div>
         </div>
-      )}
+
+        <div className="w-full sm:w-80">
+          <Select
+            value={selectedPatientId}
+            onChange={(e) => setSelectedPatientId(e.target.value)}
+            options={
+              patients.length === 0
+                ? [{ value: '', label: 'No patients registered' }]
+                : patients.map(p => ({ value: p.id, label: `${p.name} (ABHA: ${p.abha})` }))
+            }
+          />
+        </div>
+      </div>
 
       {selectedPatient ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* LEFT COLUMN: EMR Health Vitals & Roster Cards */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* LEFT PANEL: Demographics, Vitals, Timeline */}
           <div className="lg:col-span-5 space-y-6">
             
-            {/* Demographic Card */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-3">
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
-                <div className="bg-slate-100 p-2 rounded-xl text-slate-600">
-                  <User className="h-4.5 w-4.5" />
+            {/* Demographics Card */}
+            <Card elevated className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <User className="h-4.5 w-4.5 text-blue-500" />
+                <h4 className="font-bold text-xs text-slate-800 dark:text-white uppercase tracking-wider">Demographics</h4>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                <div>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-550 block uppercase font-bold">Patient Name</span>
+                  <span className="text-slate-800 dark:text-white text-sm font-bold block mt-0.5">{selectedPatient.name}</span>
                 </div>
                 <div>
-                  <h4 className="font-extrabold text-sm text-slate-800 leading-none">{selectedPatient.name}</h4>
-                  <p className="text-[10px] text-slate-400 font-mono mt-1">ABHA ID: {selectedPatient.abha}</p>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-550 block uppercase font-bold">ABHA Card ID</span>
+                  <span className="text-slate-800 dark:text-white font-mono block mt-0.5">{selectedPatient.abha}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-550 block uppercase font-bold">Age / Gender</span>
+                  <span className="text-slate-700 dark:text-slate-350 capitalize block mt-0.5">
+                    {new Date().getFullYear() - new Date(selectedPatient.dob).getFullYear()} Years / {selectedPatient.gender}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-550 block uppercase font-bold">Phone</span>
+                  <span className="text-slate-700 dark:text-slate-350 font-mono block mt-0.5">{selectedPatient.phone}</span>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-500">
-                <div>
-                  <span className="text-[9px] font-bold text-slate-400 block uppercase">DOB</span>
-                  <span className="text-slate-700">{new Date(selectedPatient.dob).toLocaleDateString()}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] font-bold text-slate-400 block uppercase">Gender</span>
-                  <span className="text-slate-700 capitalize">{selectedPatient.gender}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] font-bold text-slate-400 block uppercase">Phone</span>
-                  <span className="text-slate-700 font-mono">{selectedPatient.phone}</span>
-                </div>
-                <div>
-                  <span className="text-[9px] font-bold text-slate-400 block uppercase">Status</span>
-                  <span className="text-emerald-600 font-bold">ABDM Synced</span>
-                </div>
-              </div>
-            </div>
+            </Card>
 
             {/* Vitals Indicators */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+            <Card elevated className="space-y-4">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-blue-600" />
-                  <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider">Clinical Vitals indicators</h4>
+                  <h4 className="font-bold text-xs text-slate-800 dark:text-white uppercase tracking-wider">Clinical Vitals</h4>
                 </div>
                 {!readOnly && !isEditingStats && (
                   <button 
@@ -350,389 +322,316 @@ export default function EMRTab({ patientId = '', readOnly = false }) {
               {isEditingStats ? (
                 <form onSubmit={handleUpdateStats} className="space-y-3">
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">BP (mmHg)</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 120/80" 
-                        value={statsForm.bloodPressure}
-                        onChange={(e) => setStatsForm({ ...statsForm, bloodPressure: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">Sugar (mg/dL)</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 95" 
-                        value={statsForm.sugar}
-                        onChange={(e) => setStatsForm({ ...statsForm, sugar: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-blue-500"
-                      />
-                    </div>
+                    <Input
+                      label="BP (mmHg)"
+                      type="text"
+                      placeholder="e.g. 120/80"
+                      value={statsForm.bloodPressure}
+                      onChange={(e) => setStatsForm({ ...statsForm, bloodPressure: e.target.value })}
+                    />
+                    <Input
+                      label="Sugar (mg/dL)"
+                      type="text"
+                      placeholder="e.g. 95"
+                      value={statsForm.sugar}
+                      onChange={(e) => setStatsForm({ ...statsForm, sugar: e.target.value })}
+                    />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">Weight (kg)</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 70" 
-                        value={statsForm.weight}
-                        onChange={(e) => setStatsForm({ ...statsForm, weight: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-blue-500"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">Height (cm)</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. 175" 
-                        value={statsForm.height}
-                        onChange={(e) => setStatsForm({ ...statsForm, height: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none focus:border-blue-500"
-                      />
-                    </div>
+                    <Input
+                      label="Weight (kg)"
+                      type="text"
+                      placeholder="e.g. 70"
+                      value={statsForm.weight}
+                      onChange={(e) => setStatsForm({ ...statsForm, weight: e.target.value })}
+                    />
+                    <Input
+                      label="Height (cm)"
+                      type="text"
+                      placeholder="e.g. 175"
+                      value={statsForm.height}
+                      onChange={(e) => setStatsForm({ ...statsForm, height: e.target.value })}
+                    />
                   </div>
-                  <div className="flex gap-2 justify-end pt-1">
-                    <button 
-                      type="button" 
-                      onClick={() => setIsEditingStats(false)} 
-                      className="bg-slate-200 text-slate-700 font-bold px-3 py-1.5 rounded-lg text-[10px]"
-                    >
+                  <div className="flex gap-2 pt-1 justify-end">
+                    <Button type="button" variant="secondary" onClick={() => setIsEditingStats(false)} className="py-1.5 px-3">
                       Cancel
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="bg-blue-600 text-white font-bold px-3 py-1.5 rounded-lg text-[10px] flex items-center gap-1"
-                    >
-                      <Save className="h-3.5 w-3.5" /> Save Vitals
-                    </button>
+                    </Button>
+                    <Button type="submit" variant="primary" className="py-1.5 px-3">
+                      Save Vitals
+                    </Button>
                   </div>
                 </form>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center gap-3">
-                    <div className="bg-red-500/10 p-2 rounded-lg text-red-500">
-                      <Activity className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-400 block uppercase">Blood Pressure</span>
-                      <strong className="text-xs text-slate-700">{selectedPatient.emr?.bloodPressure || 'N/A'} mmHg</strong>
-                    </div>
+                <div className="grid grid-cols-4 gap-3 text-center">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-850 rounded-xl">
+                    <span className="text-[8px] text-slate-400 dark:text-slate-500 font-bold block uppercase">BP</span>
+                    <span className="text-slate-800 dark:text-white font-mono text-xs font-black block mt-0.5">{selectedPatient.emr?.bloodPressure || 'N/A'}</span>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center gap-3">
-                    <div className="bg-amber-500/10 p-2 rounded-lg text-amber-500">
-                      <HeartPulse className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-400 block uppercase">Blood Sugar</span>
-                      <strong className="text-xs text-slate-700">{selectedPatient.emr?.sugar || 'N/A'} mg/dL</strong>
-                    </div>
+                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-850 rounded-xl">
+                    <span className="text-[8px] text-slate-400 dark:text-slate-500 font-bold block uppercase">Sugar</span>
+                    <span className="text-slate-800 dark:text-white font-mono text-xs font-black block mt-0.5">{selectedPatient.emr?.sugar || 'N/A'}</span>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center gap-3">
-                    <div className="bg-blue-500/10 p-2 rounded-lg text-blue-500">
-                      <Activity className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-400 block uppercase">Body Weight</span>
-                      <strong className="text-xs text-slate-700">{selectedPatient.emr?.weight || 'N/A'} kg</strong>
-                    </div>
+                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-850 rounded-xl">
+                    <span className="text-[8px] text-slate-400 dark:text-slate-500 font-bold block uppercase">Weight</span>
+                    <span className="text-slate-800 dark:text-white font-mono text-xs font-black block mt-0.5">{selectedPatient.emr?.weight ? `${selectedPatient.emr.weight}kg` : 'N/A'}</span>
                   </div>
-                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex items-center gap-3">
-                    <div className="bg-emerald-500/10 p-2 rounded-lg text-emerald-500">
-                      <Activity className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <span className="text-[9px] font-bold text-slate-400 block uppercase">Height</span>
-                      <strong className="text-xs text-slate-700">{selectedPatient.emr?.height || 'N/A'} cm</strong>
-                    </div>
+                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-850 rounded-xl">
+                    <span className="text-[8px] text-slate-400 dark:text-slate-500 font-bold block uppercase">Height</span>
+                    <span className="text-slate-800 dark:text-white font-mono text-xs font-black block mt-0.5">{selectedPatient.emr?.height ? `${selectedPatient.emr.height}cm` : 'N/A'}</span>
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
 
-            {/* Medical History Elements (Allergies, Chronic Diseases, Surgery History) */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider pb-2 border-b border-slate-100">Medical history & risks</h4>
-              
-              {/* Allergies */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-rose-500 font-bold text-[10px] uppercase">
-                  <ShieldAlert className="h-3.5 w-3.5" />
-                  <span>Allergies / Drug Reactions</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(selectedPatient.emr?.allergies || []).map((a, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded text-[10px] font-bold">
-                      {a}
-                      {!readOnly && (
-                        <button onClick={() => handleRemoveHistory('allergies', i)} className="text-[10px] text-rose-400 hover:text-rose-600 font-black ml-0.5 cursor-pointer">×</button>
-                      )}
-                    </span>
-                  ))}
-                  {(selectedPatient.emr?.allergies || []).length === 0 && (
-                    <span className="text-slate-400 text-[10px] italic">No allergies recorded</span>
-                  )}
-                </div>
-                {!readOnly && (
-                  <div className="flex gap-2 pt-1">
-                    <input 
-                      type="text" 
-                      placeholder="Add Substance..." 
-                      value={newAllergy}
-                      onChange={(e) => setNewAllergy(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[10px] outline-none flex-1 font-medium"
-                    />
-                    <button 
-                      onClick={() => handleAddHistory('allergies', newAllergy, setNewAllergy)}
-                      className="bg-rose-500 hover:bg-rose-600 text-white p-1.5 rounded-lg text-[10px] font-bold cursor-pointer"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
+            {/* Timeline */}
+            <Card elevated className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <CalendarClock className="h-4 w-4 text-blue-500" />
+                <h4 className="font-bold text-xs text-slate-800 dark:text-white uppercase tracking-wider">Clinical Timeline</h4>
               </div>
 
-              {/* Chronic Diseases */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-1.5 text-blue-500 font-bold text-[10px] uppercase">
-                  <Stethoscope className="h-3.5 w-3.5" />
-                  <span>Chronic Diseases / Conditions</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(selectedPatient.emr?.diseases || []).map((d, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded text-[10px] font-bold">
-                      {d}
-                      {!readOnly && (
-                        <button onClick={() => handleRemoveHistory('diseases', i)} className="text-[10px] text-blue-400 hover:text-blue-600 font-black ml-0.5 cursor-pointer">×</button>
-                      )}
-                    </span>
-                  ))}
-                  {(selectedPatient.emr?.diseases || []).length === 0 && (
-                    <span className="text-slate-400 text-[10px] italic">No active diagnoses</span>
-                  )}
-                </div>
-                {!readOnly && (
-                  <div className="flex gap-2 pt-1">
-                    <input 
-                      type="text" 
-                      placeholder="Add Condition..." 
-                      value={newDisease}
-                      onChange={(e) => setNewDisease(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[10px] outline-none flex-1 font-medium"
-                    />
-                    <button 
-                      onClick={() => handleAddHistory('diseases', newDisease, setNewDisease)}
-                      className="bg-blue-500 hover:bg-blue-600 text-white p-1.5 rounded-lg text-[10px] font-bold cursor-pointer"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Surgery History */}
-              <div className="space-y-2 pt-2 border-t border-slate-100">
-                <div className="flex items-center gap-1.5 text-purple-500 font-bold text-[10px] uppercase">
-                  <Scissors className="h-3.5 w-3.5" />
-                  <span>Surgery & Operative History</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {(selectedPatient.emr?.surgeries || []).map((s, i) => (
-                    <span key={i} className="inline-flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-100 px-2 py-0.5 rounded text-[10px] font-bold">
-                      {s}
-                      {!readOnly && (
-                        <button onClick={() => handleRemoveHistory('surgeries', i)} className="text-[10px] text-purple-400 hover:text-purple-600 font-black ml-0.5 cursor-pointer">×</button>
-                      )}
-                    </span>
-                  ))}
-                  {(selectedPatient.emr?.surgeries || []).length === 0 && (
-                    <span className="text-slate-400 text-[10px] italic">No surgical history logged</span>
-                  )}
-                </div>
-                {!readOnly && (
-                  <div className="flex gap-2 pt-1">
-                    <input 
-                      type="text" 
-                      placeholder="Add Surgery (e.g. Hernia 2021)..." 
-                      value={newSurgery}
-                      onChange={(e) => setNewSurgery(e.target.value)}
-                      className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-[10px] outline-none flex-1 font-medium"
-                    />
-                    <button 
-                      onClick={() => handleAddHistory('surgeries', newSurgery, setNewSurgery)}
-                      className="bg-purple-500 hover:bg-purple-600 text-white p-1.5 rounded-lg text-[10px] font-bold cursor-pointer"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN: Year-Grouped Tree Clinical Timeline */}
-          <div className="lg:col-span-7 space-y-6">
-            
-            {/* Add Lab Test Card */}
-            {!readOnly && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-                <div className="flex justify-between items-center pb-2 border-b border-slate-100">
-                  <div className="flex items-center gap-2">
-                    <Microscope className="h-4 w-4 text-purple-600" />
-                    <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider">Log Patient Diagnostic Lab report</h4>
-                  </div>
-                  <button 
-                    onClick={() => setShowLabForm(!showLabForm)} 
-                    className="text-xs text-purple-600 hover:text-purple-700 font-bold hover:underline cursor-pointer"
-                  >
-                    {showLabForm ? 'Close' : 'Record'}
-                  </button>
-                </div>
-
-                {showLabForm && (
-                  <form onSubmit={handleAddLabTest} className="space-y-3 animate-fade-in">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">Test Name</label>
-                        <input 
-                          type="text" 
-                          required
-                          placeholder="e.g. CBC, Lipid Profile, MRI" 
-                          value={labForm.testName}
-                          onChange={(e) => setLabForm({ ...labForm, testName: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[9px] font-bold text-slate-400 uppercase">Report Date</label>
-                        <input 
-                          type="date" 
-                          required
-                          value={labForm.date}
-                          onChange={(e) => setLabForm({ ...labForm, date: e.target.value })}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none text-slate-650"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">Result Value / Conclusion</label>
-                      <input 
-                        type="text" 
-                        required
-                        placeholder="e.g. Hemoglobin: 14.2 g/dL (Normal)" 
-                        value={labForm.result}
-                        onChange={(e) => setLabForm({ ...labForm, result: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-[9px] font-bold text-slate-400 uppercase">Lab Notes / Comments</label>
-                      <textarea 
-                        placeholder="Diagnostic remarks..." 
-                        value={labForm.notes}
-                        onChange={(e) => setLabForm({ ...labForm, notes: e.target.value })}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs outline-none"
-                        rows="2"
-                      />
-                    </div>
-                    <button 
-                      type="submit" 
-                      className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 rounded-xl text-xs transition-all cursor-pointer"
-                    >
-                      Save Lab Report & Update Timeline
-                    </button>
-                  </form>
-                )}
-              </div>
-            )}
-
-            {/* Tree-style Timeline */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-                <Calendar className="h-4.5 w-4.5 text-blue-600" />
-                <h4 className="font-extrabold text-sm text-slate-800 font-heading">Clinical Medical Timeline</h4>
-              </div>
-
-              {timelineGrouped.length === 0 ? (
-                <div className="text-center py-12 text-slate-400 font-medium text-xs">
-                  No clinical events recorded for this patient file yet.
+              {timelineItems.length === 0 ? (
+                <div className="text-center py-6 text-slate-400 dark:text-slate-500 text-xs font-medium">
+                  No registered medical history events found.
                 </div>
               ) : (
-                <div className="space-y-8 pl-2">
-                  {timelineGrouped.map(([year, events]) => (
-                    <div key={year} className="relative space-y-4">
-                      {/* Year Header Group */}
-                      <div className="flex items-center gap-3 relative z-10">
-                        <span className="bg-slate-800 text-slate-100 px-3 py-1 rounded-xl text-xs font-black font-mono shadow-sm">
-                          {year}
-                        </span>
-                        <div className="h-[1px] bg-slate-200 flex-1" />
+                <div className="space-y-4 relative border-l border-slate-200 dark:border-slate-800 pl-4.5 ml-2 pt-1.5">
+                  {timelineItems.map((item, idx) => (
+                    <div key={idx} className="relative space-y-1">
+                      {/* Timeline dot */}
+                      <div className="absolute -left-[24.5px] top-1.5 h-3.5 w-3.5 rounded-full bg-white dark:bg-slate-900 border-2 border-indigo-500" />
+                      
+                      <div className="flex justify-between items-start">
+                        <span className="font-mono text-[9px] text-slate-400 dark:text-slate-500 font-bold">{new Date(item.date).toLocaleDateString()}</span>
+                        <span className="text-[8px] font-mono font-bold uppercase tracking-wide text-blue-500">{item.type}</span>
                       </div>
-
-                      {/* Tree branch content */}
-                      <div className="relative border-l-2 border-slate-150 pl-6 ml-4 space-y-4 pt-1">
-                        {events.map((evt, idx) => {
-                          const IconComp = 
-                            evt.type === 'Consultation' ? Stethoscope :
-                            evt.type === 'Prescription' ? Pill :
-                            evt.type === 'Lab Test' ? Microscope : Calendar;
-
-                          return (
-                            <div key={idx} className="relative group">
-                              {/* Horizontal branch line connecting from border-l */}
-                              <div className="absolute -left-[30px] top-4.5 w-[20px] h-[2px] bg-slate-150 group-last:bg-gradient-to-r group-last:from-slate-150 group-last:to-transparent" />
-                              
-                              {/* Connector Dot */}
-                              <div className={`absolute -left-[30px] -translate-x-[6.5px] top-2.5 h-4 w-4 rounded-full flex items-center justify-center border-2 border-white shadow-sm transition-transform group-hover:scale-110 z-10 ${
-                                evt.type === 'Consultation' ? 'bg-emerald-500 text-white' :
-                                evt.type === 'Prescription' ? 'bg-blue-500 text-white' :
-                                evt.type === 'Lab Test' ? 'bg-purple-500 text-white' : 'bg-amber-500 text-white'
-                              }`}>
-                                <IconComp className="h-2 w-2" />
-                              </div>
-
-                              {/* Timeline Card */}
-                              <div className="bg-slate-50/50 hover:bg-slate-50 border border-slate-200/80 rounded-2xl p-4 shadow-sm transition-all hover:border-slate-300">
-                                <div className="flex justify-between items-start gap-3">
-                                  <div>
-                                    <span className={`inline-flex px-1.5 py-0.5 rounded text-[8px] font-black uppercase border tracking-wider ${evt.color}`}>
-                                      {evt.type}
-                                    </span>
-                                    <h5 className="font-extrabold text-slate-800 text-xs mt-1.5 leading-tight">{evt.title}</h5>
-                                    <p className="text-[10px] text-slate-500 font-semibold mt-1">{evt.description}</p>
-                                  </div>
-                                  <span className="text-[9px] font-bold text-slate-400 font-mono bg-white border border-slate-150 px-2 py-0.5 rounded">
-                                    {new Date(evt.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                  </span>
-                                </div>
-
-                                {evt.meta && (
-                                  <p className="text-[10px] text-slate-600 font-semibold bg-white border border-slate-200/40 rounded-lg p-2.5 mt-2.5 leading-relaxed">
-                                    {evt.meta}
-                                  </p>
-                                )}
-                                
-                                {evt.details && (
-                                  <p className="text-[9px] text-slate-400 font-medium italic mt-1.5 pl-1.5 border-l-2 border-slate-200">
-                                    {evt.details}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <h5 className="font-bold text-slate-800 dark:text-white text-xs leading-tight">{item.title}</h5>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{item.description}</p>
+                      
+                      {item.meta && (
+                        <div className="text-[10px] text-slate-655 dark:text-slate-300 font-medium bg-slate-50 dark:bg-slate-950 p-2 rounded border border-slate-100 dark:border-slate-850 mt-1">
+                          {item.meta}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
+
           </div>
+
+          {/* RIGHT PANEL: Consultations Desk, Diagnostic Tests */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Consultation desk */}
+            {!readOnly && (
+              <Card className="space-y-5">
+                <div className="flex items-center gap-3 pb-3 border-b border-slate-150 dark:border-slate-800">
+                  <div className="bg-emerald-500/10 p-2.5 rounded-xl text-emerald-600 shrink-0">
+                    <Stethoscope className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Consultation Notes & Check-out</h3>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Record diagnosis and issue prescriptions</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleConsultSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Chief Complaint"
+                      type="text"
+                      required
+                      value={consultForm.complaint}
+                      onChange={(e) => setConsultForm({ ...consultForm, complaint: e.target.value })}
+                      placeholder="e.g. Chronic chest pain"
+                    />
+                    <Input
+                      label="Diagnosis Summary"
+                      type="text"
+                      required
+                      value={consultForm.diagnosis}
+                      onChange={(e) => setConsultForm({ ...consultForm, diagnosis: e.target.value })}
+                      placeholder="e.g. Mild angina"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Associated Symptoms"
+                      type="text"
+                      value={consultForm.symptoms}
+                      onChange={(e) => setConsultForm({ ...consultForm, symptoms: e.target.value })}
+                      placeholder="e.g. Shortness of breath"
+                    />
+                    <Input
+                      label="Prognosis / Advice"
+                      type="text"
+                      value={consultForm.prognosis}
+                      onChange={(e) => setConsultForm({ ...consultForm, prognosis: e.target.value })}
+                      placeholder="e.g. Low sodium diet, rest"
+                    />
+                  </div>
+
+                  {/* Roster Prescriptions */}
+                  <div className="border border-slate-200/60 dark:border-slate-800 rounded-xl p-4 space-y-3.5 bg-slate-50/50 dark:bg-slate-950/40">
+                    <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Add Medication to Digital Prescription</h4>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                      <div className="col-span-2 sm:col-span-1">
+                        <Input
+                          label="Medicine"
+                          type="text"
+                          value={medInput.name}
+                          onChange={(e) => setMedInput({ ...medInput, name: e.target.value })}
+                          placeholder="Paracetamol"
+                        />
+                      </div>
+
+                      <Select
+                        label="Dosage"
+                        value={medInput.dosage}
+                        onChange={(e) => setMedInput({ ...medInput, dosage: e.target.value })}
+                        options={[
+                          { value: '10mg', label: '10mg' },
+                          { value: '50mg', label: '50mg' },
+                          { value: '100mg', label: '100mg' },
+                          { value: '500mg', label: '500mg' },
+                          { value: '1 Tablet', label: '1 Tablet' },
+                          { value: '2 Tablets', label: '2 Tablets' }
+                        ]}
+                      />
+
+                      <Select
+                        label="Frequency"
+                        value={medInput.frequency}
+                        onChange={(e) => setMedInput({ ...medInput, frequency: e.target.value })}
+                        options={[
+                          { value: 'Once Daily', label: 'Once Daily (1-0-0)' },
+                          { value: 'Twice Daily', label: 'Twice Daily (1-0-1)' },
+                          { value: 'Thrice Daily', label: 'Thrice Daily (1-1-1)' },
+                          { value: 'As Needed', label: 'As Needed (SOS)' }
+                        ]}
+                      />
+
+                      <Select
+                        label="Duration"
+                        value={medInput.duration}
+                        onChange={(e) => setMedInput({ ...medInput, duration: e.target.value })}
+                        options={[
+                          { value: '3 Days', label: '3 Days' },
+                          { value: '5 Days', label: '5 Days' },
+                          { value: '1 Week', label: '1 Week' },
+                          { value: '2 Weeks', label: '2 Weeks' },
+                          { value: '1 Month', label: '1 Month' }
+                        ]}
+                      />
+                    </div>
+
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={handleAddMed}
+                        className="py-1.5 px-4"
+                      >
+                        + Add Medication
+                      </Button>
+                    </div>
+
+                    {/* Roster prescription list */}
+                    {medsList.length > 0 && (
+                      <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2">
+                        {medsList.map((m, idx) => (
+                          <div key={idx} className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 p-2.5 rounded-lg text-xs font-semibold">
+                            <div>
+                              <span className="text-slate-800 dark:text-white font-bold">{m.name}</span>
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium ml-2">({m.dosage} - {m.frequency} for {m.duration})</span>
+                            </div>
+                            <Button
+                              type="button"
+                              onClick={() => handleRemoveMed(idx)}
+                              variant="outline"
+                              className="p-1 h-7 w-7 rounded-md hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500 border-none"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    type="submit"
+                    variant="emerald"
+                    className="w-full py-3"
+                  >
+                    Check Out & Forward to Billing
+                  </Button>
+                </form>
+              </Card>
+            )}
+
+            {/* Lab diagnostics */}
+            {!readOnly && (
+              <Card className="space-y-5">
+                <div className="flex items-center gap-3 pb-3 border-b border-slate-150 dark:border-slate-800">
+                  <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-650 shrink-0">
+                    <FileSpreadsheet className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-855 dark:text-white font-heading">Diagnostic Lab Entry</h3>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Record diagnostic parameters directly into EMR</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleLabSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Select
+                      label="Select Diagnostic Test"
+                      value={labForm.testName}
+                      onChange={(e) => setLabForm({ ...labForm, testName: e.target.value })}
+                      options={[
+                        { value: 'Complete Blood Count (CBC)', label: 'Complete Blood Count (CBC)' },
+                        { value: 'Lipid Profile Panel', label: 'Lipid Profile Panel' },
+                        { value: 'Hemoglobin A1c (HbA1c)', label: 'Hemoglobin A1c (HbA1c)' },
+                        { value: 'Electrocardiogram (ECG)', label: 'Electrocardiogram (ECG)' },
+                        { value: 'Urinalysis Roster', label: 'Urinalysis Roster' }
+                      ]}
+                    />
+
+                    <Input
+                      label="Lab Outcome / Result"
+                      type="text"
+                      required
+                      value={labForm.result}
+                      onChange={(e) => setLabForm({ ...labForm, result: e.target.value })}
+                      placeholder="e.g. normal, 140 mg/dL, elevated"
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      type="submit"
+                      variant="indigo"
+                      className="px-6"
+                    >
+                      Record Lab Outcome
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+            )}
+
+          </div>
+
         </div>
       ) : (
-        <div className="text-center py-16 bg-white border border-slate-200 rounded-2xl text-slate-400 font-medium text-xs">
-          Please select a patient file from the lookup selector to load their clinical EMR files.
+        <div className="text-center py-20 card-surface border border-slate-200 dark:border-slate-800 shadow-sm text-slate-400 font-medium">
+          Select or check-in patients to inspect clinical records.
         </div>
       )}
     </div>

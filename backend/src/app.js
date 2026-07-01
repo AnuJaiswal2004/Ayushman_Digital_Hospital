@@ -34,7 +34,8 @@ app.use((req, res, next) => {
 });
 
 // Statically serve uploaded files
-app.use('/uploads', express.static('backend/uploads'));
+const staticUploadsPath = process.cwd().endsWith('backend') ? 'uploads' : 'backend/uploads';
+app.use('/uploads', express.static(staticUploadsPath));
 
 // General Middlewares
 app.use(cors({

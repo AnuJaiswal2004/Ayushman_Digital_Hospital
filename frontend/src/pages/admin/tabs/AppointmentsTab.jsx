@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Calendar, CalendarClock, Ban, CheckCircle2, X } from 'lucide-react';
 import { apiService } from '../../../services/api.js';
+import Modal from '../../../components/ui/Modal.jsx';
+import Input from '../../../components/ui/Input.jsx';
+import Select from '../../../components/ui/Select.jsx';
+import Button from '../../../components/ui/Button.jsx';
+import Badge from '../../../components/ui/Badge.jsx';
+import Table from '../../../components/ui/Table.jsx';
 
 export default function AppointmentsTab() {
   const [appointments, setAppointments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [dateFilter, setDateFilter] = useState('');
-  
-  // Reschedule state
+
+  // Reschedule Form State
   const [rescheduleApt, setRescheduleApt] = useState(null);
   const [rescheduleForm, setRescheduleForm] = useState({
     date: '',
@@ -17,7 +23,13 @@ export default function AppointmentsTab() {
 
   const loadAppointments = async () => {
     const list = await apiService.getAppointments();
-    setAppointments(list);
+    // Sort scheduled first, then by date descending
+    const sorted = list.sort((a, b) => {
+      if (a.status === 'scheduled' && b.status !== 'scheduled') return -1;
+      if (a.status !== 'scheduled' && b.status === 'scheduled') return 1;
+      return new Date(b.date) - new Date(a.date);
+    });
+    setAppointments(sorted);
   };
 
   useEffect(() => {
@@ -27,9 +39,9 @@ export default function AppointmentsTab() {
   const handleCancel = async (id) => {
     if (window.confirm('Are you sure you want to cancel this appointment?')) {
       try {
-        await apiService.updateAppointmentStatus(id, 'cancelled');
+        await apiService.cancelAppointment(id);
         loadAppointments();
-        alert('Appointment cancelled successfully');
+        alert('Appointment cancelled successfully.');
       } catch (err) {
         alert('Failed to cancel appointment');
       }
@@ -47,26 +59,15 @@ export default function AppointmentsTab() {
   const handleRescheduleSubmit = async (e) => {
     e.preventDefault();
     if (!rescheduleForm.date || !rescheduleForm.time) {
-      alert('Please select a date and time');
-      return;
-    }
-    
-    // Validate date is not in the past
-    const selectedDate = new Date(rescheduleForm.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (selectedDate < today) {
-      alert('Cannot reschedule appointments in the past');
+      alert('Please select both date and time slot.');
       return;
     }
 
     try {
-      const id = rescheduleApt.id || rescheduleApt._id;
-      await apiService.rescheduleAppointment(id, rescheduleForm.date, rescheduleForm.time);
+      await apiService.rescheduleAppointment(rescheduleApt.id, rescheduleForm.date, rescheduleForm.time);
       setRescheduleApt(null);
       loadAppointments();
-      alert('Appointment rescheduled successfully');
+      alert('Appointment rescheduled successfully.');
     } catch (err) {
       alert('Failed to reschedule appointment');
     }
@@ -87,191 +88,163 @@ export default function AppointmentsTab() {
   return (
     <div className="space-y-6">
       {/* Search and Filters */}
-      <div className="flex flex-col md:flex-row gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-        <div className="relative flex-1">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 h-4.5 w-4.5" />
-          <input
+      <div className="flex flex-col md:flex-row gap-4 card-surface p-4 border border-slate-200 dark:border-slate-800">
+        <div className="flex-1">
+          <Input
             type="text"
+            icon={Search}
             placeholder="Search appointments by Patient, Doctor, or ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl pl-11 pr-4 py-2.5 text-sm font-medium outline-none text-slate-200"
           />
         </div>
         
         <div className="flex flex-wrap sm:flex-nowrap gap-3">
-          <div className="relative">
-            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 h-4 w-4 pointer-events-none" />
-            <input
+          <div className="relative w-full sm:w-auto">
+            <Input
               type="date"
+              icon={Calendar}
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold outline-none text-slate-300 w-full min-w-[145px]"
+              className="min-w-[145px]"
             />
           </div>
 
-          <select
+          <Select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-slate-950 border border-slate-850 focus:border-blue-500 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none text-slate-350 min-w-[140px] cursor-pointer"
-          >
-            <option value="All">All Statuses</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="completed">Completed</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
+            className="min-w-[140px]"
+            options={[
+              { value: 'All', label: 'All Statuses' },
+              { value: 'scheduled', label: 'Scheduled' },
+              { value: 'completed', label: 'Completed' },
+              { value: 'cancelled', label: 'Cancelled' }
+            ]}
+          />
         </div>
       </div>
 
       {/* Appointments Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead>
-              <tr className="border-b border-slate-800 text-[11px] font-bold text-slate-500 uppercase tracking-wider bg-slate-900/40">
-                <th className="py-4 px-6">ID</th>
-                <th className="py-4 px-6">Patient</th>
-                <th className="py-4 px-6">Doctor</th>
-                <th className="py-4 px-6">Department</th>
-                <th className="py-4 px-6">Date & Time</th>
-                <th className="py-4 px-6">Type</th>
-                <th className="py-4 px-6">Status</th>
-                <th className="py-4 px-6 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 font-medium text-slate-300">
-              {filteredAppointments.length === 0 ? (
-                <tr>
-                  <td colSpan="8" className="py-8 text-center text-slate-500 font-medium">
-                    No appointments found matching filters.
-                  </td>
-                </tr>
-              ) : (
-                filteredAppointments.map((a) => (
-                  <tr key={a.id} className="hover:bg-slate-800/10">
-                    <td className="py-4 px-6 font-mono text-xs text-blue-400 font-bold">{a.id}</td>
-                    <td className="py-4 px-6 font-bold text-white">{a.patientName}</td>
-                    <td className="py-4 px-6 text-slate-200">{a.doctor}</td>
-                    <td className="py-4 px-6 text-xs text-slate-400 capitalize">{a.department}</td>
-                    <td className="py-4 px-6 text-xs text-slate-300">
-                      <div>{new Date(a.date).toLocaleDateString()}</div>
-                      <div className="text-[10px] text-slate-500 font-mono font-bold mt-0.5">{a.time}</div>
-                    </td>
-                    <td className="py-4 px-6 text-xs">
-                      <span className={`px-2 py-0.5 rounded font-bold uppercase text-[9px] ${
-                        a.type === 'opd' 
-                          ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' 
-                          : 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
-                      }`}>
-                        {a.type}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        a.status === 'completed' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                          : a.status === 'scheduled'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                      }`}>
-                        {a.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      {a.status === 'scheduled' ? (
-                        <div className="flex justify-end gap-2.5">
-                          <button
-                            onClick={() => handleRescheduleClick(a)}
-                            className="bg-slate-800 text-slate-300 hover:bg-indigo-600 hover:text-white p-2 rounded-xl transition-all cursor-pointer"
-                            title="Reschedule Visit"
-                          >
-                            <CalendarClock className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => handleCancel(a.id)}
-                            className="bg-slate-800 text-slate-300 hover:bg-rose-600 hover:text-white p-2 rounded-xl transition-all cursor-pointer"
-                            title="Cancel Appointment"
-                          >
-                            <Ban className="h-4 w-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-[10px] font-mono text-slate-500 flex items-center justify-end gap-1.5 font-bold mr-2">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-slate-650" /> ARCHIVED
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <Table headers={['ID', 'Patient', 'Doctor', 'Department', 'Date & Time', 'Type', 'Status', 'Actions']}>
+        {filteredAppointments.length === 0 ? (
+          <tr>
+            <td colSpan="8" className="py-8 text-center text-slate-500 font-medium">
+              No appointments found matching filters.
+            </td>
+          </tr>
+        ) : (
+          filteredAppointments.map((a) => (
+            <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all border-b border-slate-100 dark:border-slate-800/60">
+              <td className="py-4 px-5 font-mono text-xs text-blue-500 dark:text-blue-400 font-bold">{a.id}</td>
+              <td className="py-4 px-5 font-bold text-slate-800 dark:text-white">{a.patientName}</td>
+              <td className="py-4 px-5 text-slate-655 dark:text-slate-200">{a.doctor}</td>
+              <td className="py-4 px-5 text-xs text-slate-400 dark:text-slate-450 capitalize">{a.department}</td>
+              <td className="py-4 px-5 text-xs text-slate-500 dark:text-slate-300">
+                <div>{new Date(a.date).toLocaleDateString()}</div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono font-bold mt-0.5">{a.time}</div>
+              </td>
+              <td className="py-4 px-5 text-xs">
+                <Badge variant={a.type === 'opd' ? 'info' : 'indigo'}>
+                  {a.type}
+                </Badge>
+              </td>
+              <td className="py-4 px-5">
+                <Badge 
+                  variant={
+                    a.status === 'completed' ? 'success' : 
+                    a.status === 'scheduled' ? 'warning' : 'danger'
+                  }
+                >
+                  {a.status}
+                </Badge>
+              </td>
+              <td className="py-4 px-5 text-right">
+                {a.status === 'scheduled' ? (
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      onClick={() => handleRescheduleClick(a)}
+                      variant="outline"
+                      className="p-2 h-9 w-9 rounded-xl"
+                      title="Reschedule Visit"
+                    >
+                      <CalendarClock className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={() => handleCancel(a.id)}
+                      variant="outline"
+                      className="p-2 h-9 w-9 rounded-xl hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500"
+                      title="Cancel Appointment"
+                    >
+                      <Ban className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <span className="text-[10px] font-mono text-slate-400 dark:text-slate-550 flex items-center justify-end gap-1.5 font-bold mr-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> ARCHIVED
+                  </span>
+                )}
+              </td>
+            </tr>
+          ))
+        )}
+      </Table>
 
       {/* Reschedule Modal */}
-      {rescheduleApt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-850 rounded-2xl shadow-2xl max-w-sm w-full p-6 relative">
-            <button
-              onClick={() => setRescheduleApt(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 hover:bg-slate-800 rounded-full cursor-pointer"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <h3 className="text-lg font-black text-white mb-2 font-heading">Reschedule Visit</h3>
-            <p className="text-xs text-slate-400 mb-5">Patient: <strong className="text-white">{rescheduleApt.patientName}</strong></p>
+      <Modal
+        isOpen={!!rescheduleApt}
+        onClose={() => setRescheduleApt(null)}
+        title="Reschedule Visit"
+      >
+        {rescheduleApt && (
+          <div className="space-y-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Patient: <strong className="text-slate-800 dark:text-white">{rescheduleApt.patientName}</strong>
+            </p>
 
             <form onSubmit={handleRescheduleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">New Appointment Date</label>
-                <input
-                  type="date"
-                  required
-                  value={rescheduleForm.date}
-                  onChange={(e) => setRescheduleForm({ ...rescheduleForm, date: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-medium outline-none text-slate-200 focus:border-blue-500"
-                />
-              </div>
+              <Input
+                label="New Appointment Date"
+                type="date"
+                required
+                value={rescheduleForm.date}
+                onChange={(e) => setRescheduleForm({ ...rescheduleForm, date: e.target.value })}
+              />
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">New Time Slot</label>
-                <select
-                  required
-                  value={rescheduleForm.time}
-                  onChange={(e) => setRescheduleForm({ ...rescheduleForm, time: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm font-semibold outline-none text-slate-350 focus:border-blue-500 cursor-pointer"
-                >
-                  <option value="">Select Time Slot</option>
-                  <option value="09:00 AM">09:00 AM</option>
-                  <option value="10:00 AM">10:00 AM</option>
-                  <option value="11:00 AM">11:00 AM</option>
-                  <option value="02:00 PM">02:00 PM</option>
-                  <option value="03:00 PM">03:00 PM</option>
-                  <option value="04:00 PM">04:00 PM</option>
-                </select>
-              </div>
+              <Select
+                label="New Time Slot"
+                required
+                value={rescheduleForm.time}
+                onChange={(e) => setRescheduleForm({ ...rescheduleForm, time: e.target.value })}
+                options={[
+                  { value: '', label: 'Select Time Slot' },
+                  { value: '09:00 AM', label: '09:00 AM' },
+                  { value: '10:00 AM', label: '10:00 AM' },
+                  { value: '11:00 AM', label: '11:00 AM' },
+                  { value: '02:00 PM', label: '02:00 PM' },
+                  { value: '03:00 PM', label: '03:00 PM' },
+                  { value: '04:00 PM', label: '04:00 PM' }
+                ]}
+              />
 
               <div className="pt-2 flex justify-end gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
                   onClick={() => setRescheduleApt(null)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold px-5 py-2.5 rounded-xl text-xs transition-colors cursor-pointer"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition-all shadow-md shadow-indigo-500/10 cursor-pointer"
+                  variant="indigo"
                 >
                   Confirm Slot
-                </button>
+                </Button>
               </div>
             </form>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 }

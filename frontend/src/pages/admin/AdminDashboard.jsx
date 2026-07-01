@@ -272,13 +272,13 @@ export default function AdminDashboard() {
                   )}
                 </button>
                 {showNotifications && (
-                  <div className="absolute right-0 mt-2 w-85 bg-slate-900 border border-slate-800 rounded-2xl shadow-xl z-50 text-slate-200 p-4 space-y-3">
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-                      <span className="font-bold text-xs text-white">System Alerts</span>
+                  <div className="absolute right-0 mt-2 w-85 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 text-slate-800 dark:text-slate-200 p-4 space-y-3">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-850">
+                      <span className="font-bold text-xs text-slate-800 dark:text-white">System Alerts</span>
                       {unreadCount > 0 && (
                         <button 
                           onClick={handleMarkAllRead}
-                          className="text-[10px] text-blue-400 hover:text-blue-300 font-bold hover:underline cursor-pointer"
+                          className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-bold cursor-pointer"
                         >
                           Mark all read
                         </button>
@@ -296,21 +296,21 @@ export default function AdminDashboard() {
                               key={n.id} 
                               className={`p-2.5 rounded-xl border transition-all text-left ${
                                 isEmergency 
-                                  ? 'bg-rose-500/10 border-rose-500/25 text-rose-250'
+                                  ? 'bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/25 text-rose-700 dark:text-rose-400'
                                   : isUnread 
-                                  ? 'bg-slate-850 border-slate-800' 
-                                  : 'bg-slate-900/60 border-slate-850/80 opacity-75'
+                                  ? 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800' 
+                                  : 'bg-white dark:bg-slate-900/60 border-slate-100 dark:border-slate-800/80 opacity-75'
                               }`}
                             >
                               <div className="flex justify-between items-start">
-                                <span className={`font-extrabold text-[11px] ${isEmergency ? 'text-rose-450' : 'text-white'}`}>
+                                <span className={`font-extrabold text-[11px] ${isEmergency ? 'text-rose-600 dark:text-rose-400' : 'text-slate-800 dark:text-white'}`}>
                                   {n.title}
                                 </span>
                                 <span className="text-[8px] font-bold text-slate-500 font-mono">
                                   {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                               </div>
-                              <p className="text-[10px] text-slate-450 font-semibold leading-relaxed mt-1">{n.message}</p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold leading-relaxed mt-1">{n.message}</p>
                             </div>
                           );
                         })
@@ -335,22 +335,22 @@ export default function AdminDashboard() {
             {activeTab === 'doctors' && <DoctorsTab />}
             {activeTab === 'departments' && <DepartmentsTab />}
             {activeTab === 'reception' && (
-              <div className="bg-slate-50 p-6 rounded-2xl text-slate-800 border border-slate-200">
+              <div className="card-surface p-6">
                 <ReceptionTab />
               </div>
             )}
             {activeTab === 'emr' && (
-              <div className="bg-slate-50 p-6 rounded-2xl text-slate-800 border border-slate-200">
+              <div className="card-surface p-6">
                 <EMRTab />
               </div>
             )}
             {activeTab === 'billing' && (
-              <div className="bg-slate-50 p-6 rounded-2xl text-slate-800 border border-slate-200">
+              <div className="card-surface p-6">
                 <BillingTab />
               </div>
             )}
             {activeTab === 'reports' && (
-              <div className="bg-slate-50 p-6 rounded-2xl text-slate-800 border border-slate-200">
+              <div className="card-surface p-6">
                 <ReportsTab />
               </div>
             )}
