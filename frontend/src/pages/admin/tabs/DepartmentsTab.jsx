@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Building2, User, Users, BedDouble, AlertCircle, Plus, Minus } from 'lucide-react';
 import { apiService } from '../../../services/api.js';
 import Card from '../../../components/ui/Card.jsx';
@@ -102,7 +102,7 @@ export default function DepartmentsTab() {
         {departments.map((dept) => {
           const occupancyRate = Math.round((dept.occupiedBeds / dept.totalBeds) * 100);
           return (
-            <Card key={dept.key} className="space-y-5 flex flex-col hover:border-slate-350 dark:hover:border-slate-700 transition-all text-left">
+            <Card key={dept.key} className="space-y-5 flex flex-col hover:border-slate-400 dark:hover:border-slate-700 transition-all text-left">
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
                   <h4 className="font-bold text-slate-800 dark:text-white text-lg font-heading">{dept.name}</h4>
@@ -119,15 +119,15 @@ export default function DepartmentsTab() {
               {/* Department Vitals */}
               <div className="grid grid-cols-3 gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-100 dark:border-slate-800/60 pt-4">
                 <div>
-                  <span className="block text-[9px] text-slate-400 dark:text-slate-550 font-bold uppercase">Doctors Assigned</span>
+                  <span className="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Doctors Assigned</span>
                   <span className="text-slate-700 dark:text-slate-300">{dept.doctors} Specialists</span>
                 </div>
                 <div>
-                  <span className="block text-[9px] text-slate-400 dark:text-slate-550 font-bold uppercase">Total Beds</span>
+                  <span className="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Total Beds</span>
                   <span className="text-slate-700 dark:text-slate-300">{dept.totalBeds} Units</span>
                 </div>
                 <div>
-                  <span className="block text-[9px] text-slate-400 dark:text-slate-550 font-bold uppercase">Available Beds</span>
+                  <span className="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Available Beds</span>
                   <span className="text-slate-700 dark:text-slate-300">{dept.totalBeds - dept.occupiedBeds} Units</span>
                 </div>
               </div>

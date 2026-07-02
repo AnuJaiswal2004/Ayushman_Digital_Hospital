@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   FileText, Download, Printer, User, DollarSign, Activity, 
   Building, Award, Search, Calendar, CheckCircle2, ChevronRight, TrendingUp
@@ -406,7 +406,7 @@ export default function ReportsTab() {
 
           <div>
             <h3 class="text-xs font-black text-slate-800 uppercase tracking-widest border-b pb-1 mb-2">LAST RECORDED VITALS</h3>
-            <div class="grid grid-cols-4 gap-2 text-center text-xs font-bold text-slate-655">
+            <div class="grid grid-cols-4 gap-2 text-center text-xs font-bold text-slate-600">
               <div class="bg-slate-50 p-3.5 border rounded-xl">
                 <span class="text-[9px] text-slate-400 block uppercase font-bold">BP</span>
                 <span class="text-slate-800 text-sm font-black font-mono block mt-1">${activePatient.emr?.bloodPressure || 'N/A'}</span>
@@ -435,11 +435,11 @@ export default function ReportsTab() {
               </div>
               <div class="p-3 bg-amber-50 border border-amber-100 rounded-xl">
                 <span class="text-[9px] text-amber-500 font-bold block uppercase">Chronic Diseases</span>
-                <p class="text-amber-750 font-bold mt-1">${activePatient.emr?.diseases?.join(', ') || 'No active chronic diagnoses'}</p>
+                <p class="text-amber-700 font-bold mt-1">${activePatient.emr?.diseases?.join(', ') || 'No active chronic diagnoses'}</p>
               </div>
               <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl">
                 <span class="text-[9px] text-slate-500 font-bold block uppercase">Surgery History</span>
-                <p class="text-slate-750 font-bold mt-1">${activePatient.emr?.surgeries?.join(', ') || 'No clinical surgical records'}</p>
+                <p class="text-slate-700 font-bold mt-1">${activePatient.emr?.surgeries?.join(', ') || 'No clinical surgical records'}</p>
               </div>
             </div>
           </div>
@@ -500,14 +500,14 @@ export default function ReportsTab() {
                   <th class="py-2 text-right">Total Revenue</th>
                 </tr>
               </thead>
-              <tbody class="divide-y text-slate-655 font-medium">
+              <tbody class="divide-y text-slate-600 font-medium">
                 ${monthlyRevData.map(r => `
                   <tr>
                     <td class="py-3 font-bold text-slate-800">${r.month}</td>
                     <td class="py-3 text-center">${r.count}</td>
                     <td class="py-3 text-right font-mono">₹${r.subtotal.toFixed(2)}</td>
                     <td class="py-3 text-right font-mono">₹${r.gst.toFixed(2)}</td>
-                    <td class="py-3 text-right font-mono font-black text-emerald-650">₹${r.total.toFixed(2)}</td>
+                    <td class="py-3 text-right font-mono font-black text-emerald-600">₹${r.total.toFixed(2)}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -525,7 +525,7 @@ export default function ReportsTab() {
                   <th class="py-2 text-right">Percentage Share</th>
                 </tr>
               </thead>
-              <tbody class="divide-y text-slate-655 font-medium">
+              <tbody class="divide-y text-slate-600 font-medium">
                 ${deptRevData.map(d => `
                   <tr>
                     <td class="py-3 font-bold text-slate-800 capitalize">${d.department}</td>
@@ -566,7 +566,7 @@ export default function ReportsTab() {
                 <th class="py-2 text-right">Billing Volume</th>
               </tr>
             </thead>
-            <tbody class="divide-y text-slate-655 font-medium">
+            <tbody class="divide-y text-slate-600 font-medium">
               ${doctorReports.map(d => `
                 <tr>
                   <td class="py-3.5 font-mono text-slate-900">${d.id}</td>
@@ -616,7 +616,7 @@ export default function ReportsTab() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl w-full text-slate-850 dark:text-slate-200 transition-colors">
+    <div className="space-y-6 max-w-6xl w-full text-slate-900 dark:text-slate-200 transition-colors">
       
       {/* Selection Banner */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -669,7 +669,7 @@ export default function ReportsTab() {
             <div className="space-y-4">
               <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-800">
                 <User className="h-4.5 w-4.5 text-indigo-500" />
-                <h4 className="font-bold text-xs text-slate-850 dark:text-white uppercase tracking-wider">Patient Selector</h4>
+                <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider">Patient Selector</h4>
               </div>
 
               <div className="relative">
@@ -679,7 +679,7 @@ export default function ReportsTab() {
                   placeholder="Search name, phone, or ID..."
                   value={patientSearch}
                   onChange={(e) => setPatientSearch(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-semibold outline-none focus:border-indigo-500 text-slate-850 dark:text-white"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs font-semibold outline-none focus:border-indigo-500 text-slate-900 dark:text-white"
                 />
               </div>
 
@@ -694,7 +694,7 @@ export default function ReportsTab() {
                       className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
                         selectedPatientId === p.id 
                           ? 'bg-indigo-500/10 border-indigo-500/80' 
-                          : 'bg-slate-50/50 dark:bg-slate-950/40 border-slate-150 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                          : 'bg-slate-50/50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                       }`}
                     >
                       <div className="flex justify-between items-center text-xs">
@@ -708,7 +708,7 @@ export default function ReportsTab() {
               </div>
 
               {activePatient && (
-                <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-250/50 dark:border-slate-800/80 text-[11px] font-semibold text-slate-550 dark:text-slate-400 space-y-2">
+                <div className="bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-300/50 dark:border-slate-800/80 text-[11px] font-semibold text-slate-500 dark:text-slate-400 space-y-2">
                   <div className="flex justify-between">
                     <span>Active Profile:</span>
                     <span className="text-slate-800 dark:text-white font-bold">{activePatient.name}</span>
@@ -730,12 +730,12 @@ export default function ReportsTab() {
             <div className="space-y-4">
               <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-800">
                 <DollarSign className="h-4.5 w-4.5 text-emerald-500" />
-                <h4 className="font-bold text-xs text-slate-850 dark:text-white uppercase tracking-wider">Revenue Parameters</h4>
+                <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider">Revenue Parameters</h4>
               </div>
 
               <div className="space-y-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <div className="bg-emerald-500/10 border border-emerald-500/15 p-4 rounded-2xl">
-                  <span className="text-[9px] text-emerald-650 dark:text-emerald-400 font-black block uppercase tracking-wider">Total Collection</span>
+                  <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black block uppercase tracking-wider">Total Collection</span>
                   <span className="text-2xl font-black text-slate-800 dark:text-white font-mono block mt-1.5">
                     ₹{completedBillingAppts.reduce((sum, a) => sum + (Number(a.billing.total) || 0), 0).toFixed(2)}
                   </span>
@@ -768,7 +768,7 @@ export default function ReportsTab() {
             <div className="space-y-4">
               <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-800">
                 <Award className="h-4.5 w-4.5 text-amber-500" />
-                <h4 className="font-bold text-xs text-slate-850 dark:text-white uppercase tracking-wider">Clinical Audit Parameters</h4>
+                <h4 className="font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider">Clinical Audit Parameters</h4>
               </div>
 
               <div className="space-y-3.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -814,7 +814,7 @@ export default function ReportsTab() {
               </button>
               <button
                 onClick={handleCSVTrigger}
-                className="bg-slate-700 hover:bg-slate-850 text-white font-bold py-2 px-1 rounded-xl text-[10px] cursor-pointer shadow flex items-center justify-center gap-1 transition-all"
+                className="bg-slate-700 hover:bg-slate-900 text-white font-bold py-2 px-1 rounded-xl text-[10px] cursor-pointer shadow flex items-center justify-center gap-1 transition-all"
               >
                 <FileText className="h-3 w-3" /> CSV
               </button>
@@ -832,10 +832,10 @@ export default function ReportsTab() {
                 <div className="space-y-6 text-left">
                   <div className="pb-3.5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-start">
                     <div>
-                      <h4 className="font-extrabold text-sm text-slate-850 dark:text-white font-heading">{activePatient.name}</h4>
-                      <p className="text-[10px] text-slate-400 mt-0.5">ABHA Locker Reference: <span className="font-mono text-slate-550 dark:text-slate-300 font-semibold">{activePatient.abha || 'N/A'}</span></p>
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-white font-heading">{activePatient.name}</h4>
+                      <p className="text-[10px] text-slate-400 mt-0.5">ABHA Locker Reference: <span className="font-mono text-slate-500 dark:text-slate-300 font-semibold">{activePatient.abha || 'N/A'}</span></p>
                     </div>
-                    <span className="bg-emerald-500/10 text-emerald-650 text-[8px] font-black px-2 py-0.5 rounded border border-emerald-500/20 uppercase tracking-wider">
+                    <span className="bg-emerald-500/10 text-emerald-600 text-[8px] font-black px-2 py-0.5 rounded border border-emerald-500/20 uppercase tracking-wider">
                       {activePatient.status || 'Active'}
                     </span>
                   </div>
@@ -947,7 +947,7 @@ export default function ReportsTab() {
           {reportType === 'revenue' && (
             <div className="space-y-6 text-left">
               <div className="pb-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                <h4 className="font-extrabold text-sm text-slate-850 dark:text-white font-heading">Hospital Collections Audit</h4>
+                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white font-heading">Hospital Collections Audit</h4>
                 <TrendingUp className="h-4.5 w-4.5 text-emerald-500" />
               </div>
 
@@ -989,7 +989,7 @@ export default function ReportsTab() {
                         <th className="pb-1.5 text-right">Total Collection</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-655 dark:text-slate-400">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-600 dark:text-slate-400">
                       {monthlyRevData.length === 0 ? (
                         <tr>
                           <td colSpan="5" className="py-4 text-center text-slate-400">No checkout transactions on record.</td>
@@ -1001,7 +1001,7 @@ export default function ReportsTab() {
                             <td className="py-2.5 text-center">{m.count}</td>
                             <td className="py-2.5 text-right font-mono">₹{m.subtotal.toFixed(2)}</td>
                             <td className="py-2.5 text-right font-mono">₹{m.gst.toFixed(2)}</td>
-                            <td className="py-2.5 text-right font-mono font-black text-emerald-650 dark:text-emerald-400">₹{m.total.toFixed(2)}</td>
+                            <td className="py-2.5 text-right font-mono font-black text-emerald-600 dark:text-emerald-400">₹{m.total.toFixed(2)}</td>
                           </tr>
                         ))
                       )}
@@ -1016,7 +1016,7 @@ export default function ReportsTab() {
             <div className="space-y-6 text-left flex-1 flex flex-col justify-between">
               <div>
                 <div className="pb-3 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                  <h4 className="font-extrabold text-sm text-slate-850 dark:text-white font-heading">Clinical Performance Matrix</h4>
+                  <h4 className="font-extrabold text-sm text-slate-900 dark:text-white font-heading">Clinical Performance Matrix</h4>
                   <Award className="h-4.5 w-4.5 text-amber-500" />
                 </div>
 
@@ -1031,7 +1031,7 @@ export default function ReportsTab() {
                         <th className="pb-2 text-right">Revenue Contributed</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-655 dark:text-slate-400">
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 font-medium text-slate-600 dark:text-slate-400">
                       {doctorReports.map(d => (
                         <tr key={d.id} className="hover:bg-slate-50 dark:hover:bg-slate-950/40">
                           <td className="py-3 font-bold text-slate-800 dark:text-white">{d.name}</td>

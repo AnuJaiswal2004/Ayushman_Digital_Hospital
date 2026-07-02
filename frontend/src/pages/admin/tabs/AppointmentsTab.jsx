@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Search, Calendar, CalendarClock, Ban, CheckCircle2, X } from 'lucide-react';
 import { apiService } from '../../../services/api.js';
 import Modal from '../../../components/ui/Modal.jsx';
@@ -137,8 +137,8 @@ export default function AppointmentsTab() {
             <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all border-b border-slate-100 dark:border-slate-800/60">
               <td className="py-4 px-5 font-mono text-xs text-blue-500 dark:text-blue-400 font-bold">{a.id}</td>
               <td className="py-4 px-5 font-bold text-slate-800 dark:text-white">{a.patientName}</td>
-              <td className="py-4 px-5 text-slate-655 dark:text-slate-200">{a.doctor}</td>
-              <td className="py-4 px-5 text-xs text-slate-400 dark:text-slate-450 capitalize">{a.department}</td>
+              <td className="py-4 px-5 text-slate-600 dark:text-slate-200">{a.doctor}</td>
+              <td className="py-4 px-5 text-xs text-slate-400 dark:text-slate-400 capitalize">{a.department}</td>
               <td className="py-4 px-5 text-xs text-slate-500 dark:text-slate-300">
                 <div>{new Date(a.date).toLocaleDateString()}</div>
                 <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono font-bold mt-0.5">{a.time}</div>
@@ -179,7 +179,7 @@ export default function AppointmentsTab() {
                     </Button>
                   </div>
                 ) : (
-                  <span className="text-[10px] font-mono text-slate-400 dark:text-slate-550 flex items-center justify-end gap-1.5 font-bold mr-2">
+                  <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 flex items-center justify-end gap-1.5 font-bold mr-2">
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> ARCHIVED
                   </span>
                 )}

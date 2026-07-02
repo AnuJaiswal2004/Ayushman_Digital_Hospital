@@ -10,7 +10,7 @@ export default function Input({ className = '', label = '', error = '', icon: Ic
       )}
       <div className="relative">
         {Icon && (
-          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 h-4 w-4" />
+          <Icon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 h-4 w-4 pointer-events-none" />
         )}
         <input
           className={`input-surface w-full ${Icon ? 'pl-11' : 'pl-4'} pr-4 ${

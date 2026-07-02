@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Users, Calendar, Award, DollarSign, Activity, Server, Cpu, HardDrive, ShieldCheck, CheckCircle2, UserCheck, Stethoscope, Clock } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { apiService } from '../../../services/api.js';
@@ -204,12 +204,12 @@ export default function OverviewTab() {
       {/* Real-time Stats Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Card 1: Patients */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-750 hover:shadow-md transition-all group">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
           <div className="space-y-2 text-left">
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Total Patients</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-slate-800 dark:text-white">{stats.patients}</span>
-              <span className="text-emerald-550 dark:text-emerald-500 text-[10px] font-bold font-mono">+12%</span>
+              <span className="text-emerald-500 dark:text-emerald-500 text-[10px] font-bold font-mono">+12%</span>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -221,16 +221,16 @@ export default function OverviewTab() {
         </div>
 
         {/* Card 2: Today's Appointments */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-750 hover:shadow-md transition-all group">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
           <div className="space-y-2 text-left">
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Today's Appts</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-slate-800 dark:text-white">{stats.appointments}</span>
-              <span className="text-emerald-550 dark:text-emerald-500 text-[10px] font-bold font-mono">+8%</span>
+              <span className="text-emerald-500 dark:text-emerald-500 text-[10px] font-bold font-mono">+8%</span>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-550 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+            <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-500 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
               <Calendar className="h-4.5 w-4.5" />
             </div>
             <Sparkline color="#6366f1" />
@@ -238,7 +238,7 @@ export default function OverviewTab() {
         </div>
 
         {/* Card 3: Available Doctors */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-750 hover:shadow-md transition-all group">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
           <div className="space-y-2 text-left">
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider block uppercase">Available Doctors</span>
             <div className="flex items-baseline gap-2">
@@ -255,12 +255,12 @@ export default function OverviewTab() {
         </div>
 
         {/* Card 4: Revenue This Month */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-750 hover:shadow-md transition-all group">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
           <div className="space-y-2 text-left">
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Revenue Month</span>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black text-slate-800 dark:text-white">₹{stats.revenue.toLocaleString()}</span>
-              <span className="text-emerald-550 dark:text-emerald-500 text-[10px] font-bold font-mono">+18%</span>
+              <span className="text-emerald-500 dark:text-emerald-500 text-[10px] font-bold font-mono">+18%</span>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -272,7 +272,7 @@ export default function OverviewTab() {
         </div>
 
         {/* Card 5: Emergency Cases */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-750 hover:shadow-md transition-all group">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-2xl flex justify-between items-center hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all group">
           <div className="space-y-2 text-left">
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Emergency Cases</span>
             <div className="flex items-baseline gap-2">
@@ -373,7 +373,7 @@ export default function OverviewTab() {
             {charts.departmentVisits.map((item) => (
               <div key={item.name} className="flex items-center gap-1.5">
                 <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                <span>{item.name}: <strong className="text-slate-850 dark:text-white font-mono">{item.value}</strong></span>
+                <span>{item.name}: <strong className="text-slate-900 dark:text-white font-mono">{item.value}</strong></span>
               </div>
             ))}
           </div>
@@ -413,15 +413,15 @@ export default function OverviewTab() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Recent Registrations Table */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 lg:col-span-6 space-y-3 shadow-sm text-left">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-150 dark:border-slate-800">
+          <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
             <h3 className="font-bold text-sm text-slate-800 dark:text-white font-heading">Recent Registrations</h3>
-            <span className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold px-2 py-0.5 rounded border border-slate-250 dark:border-slate-700">ABDM LOGS</span>
+            <span className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700">ABDM LOGS</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
-                <tr className="border-b border-slate-150 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                   <th className="pb-2 pr-3">Name</th>
                   <th className="pb-2 px-3">ABHA ID</th>
                   <th className="pb-2 px-3">Reg Date</th>

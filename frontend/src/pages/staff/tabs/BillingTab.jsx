@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   Receipt, Search, Calculator, Check, ArrowRight, Printer, AlertTriangle 
 } from 'lucide-react';
@@ -145,7 +145,7 @@ export default function BillingTab() {
                 <p class="text-[10px] text-slate-400 mt-2 font-medium">Near Central Park, Chanakyapuri, New Delhi, India</p>
               </div>
               <div class="text-right">
-                <span class="bg-emerald-50 text-emerald-700 text-[10px] font-black px-3 py-1 rounded border border-emerald-150 uppercase tracking-widest">PAID RECEIPT</span>
+                <span class="bg-emerald-50 text-emerald-700 text-[10px] font-black px-3 py-1 rounded border border-emerald-200 uppercase tracking-widest">PAID RECEIPT</span>
                 <h3 class="font-bold text-sm text-slate-800 mt-3 font-mono">Invoice #${inv.invoiceNo}</h3>
                 <p class="text-[10px] text-slate-400 font-medium">Date: ${new Date(inv.paidAt).toLocaleDateString()}</p>
               </div>
@@ -173,7 +173,7 @@ export default function BillingTab() {
                   <th class="py-3 px-4 text-right">Amount</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-100 text-slate-655 font-medium">
+              <tbody class="divide-y divide-slate-100 text-slate-600 font-medium">
                 <tr>
                   <td class="py-4 px-4 font-bold">Outpatient Clinical Consultation Fee</td>
                   <td class="py-4 px-4 text-right font-mono">₹${inv.charges.consultation.toFixed(2)}</td>
@@ -205,7 +205,7 @@ export default function BillingTab() {
               </div>
               <div class="flex gap-16 justify-between w-64 pt-2.5 border-t border-slate-200 font-black text-slate-800 text-sm">
                 <span>Grand Total:</span>
-                <span class="font-mono text-emerald-650">₹${inv.total.toFixed(2)}</span>
+                <span class="font-mono text-emerald-600">₹${inv.total.toFixed(2)}</span>
               </div>
             </div>
 
@@ -242,11 +242,11 @@ export default function BillingTab() {
         {/* LEFT CARD: Billing Queue (lg:col-span-5) */}
         <div className="elevated-surface p-6 lg:col-span-5 shadow-sm space-y-4 border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-650 shrink-0">
+            <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-600 shrink-0">
               <Receipt className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Billing Desk Queue</h3>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white font-heading">Billing Desk Queue</h3>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Process invoices for completed consultations</p>
             </div>
           </div>
@@ -274,7 +274,7 @@ export default function BillingTab() {
                     className={`p-3.5 rounded-xl border transition-all cursor-pointer ${
                       isSelected 
                         ? 'bg-blue-50/50 dark:bg-blue-950/20 border-blue-500/80 dark:border-blue-500/40 shadow-sm' 
-                        : 'bg-slate-50 dark:bg-slate-950 border-slate-150 dark:border-slate-850 hover:bg-slate-100/50 dark:hover:bg-slate-900/40'
+                        : 'bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:bg-slate-100/50 dark:hover:bg-slate-900/40'
                     }`}
                   >
                     <div className="flex justify-between items-start">
@@ -301,25 +301,25 @@ export default function BillingTab() {
         <div className="lg:col-span-7 space-y-6">
           {selectedAppt ? (
             <Card className="space-y-5">
-              <div className="flex items-center gap-3 pb-3 border-b border-slate-150 dark:border-slate-800">
+              <div className="flex items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
                 <div className="bg-emerald-500/10 p-2.5 rounded-xl text-emerald-600 shrink-0">
                   <Calculator className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Calculate Patient Invoice</h3>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white font-heading">Calculate Patient Invoice</h3>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Configure itemized clinical dues</p>
                 </div>
               </div>
 
               {/* Patient brief info */}
-              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-250/10 dark:border-slate-800">
+              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-300/10 dark:border-slate-800">
                 <div>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-550 font-bold block uppercase">Checked In Patient</span>
-                  <span className="text-slate-850 dark:text-white text-sm font-bold block mt-0.5">{selectedAppt.patientName}</span>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold block uppercase">Checked In Patient</span>
+                  <span className="text-slate-900 dark:text-white text-sm font-bold block mt-0.5">{selectedAppt.patientName}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-550 font-bold block uppercase">Diagnosed Roster Doc</span>
-                  <span className="text-slate-850 dark:text-white block mt-0.5">{selectedAppt.doctor} ({selectedAppt.department})</span>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold block uppercase">Diagnosed Roster Doc</span>
+                  <span className="text-slate-900 dark:text-white block mt-0.5">{selectedAppt.doctor} ({selectedAppt.department})</span>
                 </div>
               </div>
 
@@ -366,7 +366,7 @@ export default function BillingTab() {
               </div>
 
               {/* Total Summary */}
-              <div className="border-t border-slate-150 dark:border-slate-800 pt-4.5 flex justify-between items-center text-xs font-semibold text-slate-500 dark:text-slate-400">
+              <div className="border-t border-slate-200 dark:border-slate-800 pt-4.5 flex justify-between items-center text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <div>
                   <span className="text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Grand total</span>
                   <span className="text-lg font-black text-slate-800 dark:text-white font-mono">
@@ -389,7 +389,7 @@ export default function BillingTab() {
                 <Check className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
                 <div>
                   <h4 className="font-extrabold">Invoice paid & patient discharged.</h4>
-                  <p className="text-[10px] text-emerald-650 dark:text-emerald-500 font-medium mt-0.5">Invoice #{invoicePreview.invoiceNo} successfully generated on National ABDM network.</p>
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-500 font-medium mt-0.5">Invoice #{invoicePreview.invoiceNo} successfully generated on National ABDM network.</p>
                 </div>
               </div>
 
@@ -397,8 +397,8 @@ export default function BillingTab() {
               <div className="border border-slate-200/60 dark:border-slate-800 rounded-2xl p-5 space-y-4">
                 <div className="flex justify-between items-start pb-4.5 border-b border-slate-100 dark:border-slate-800">
                   <div>
-                    <h4 className="font-black text-slate-850 dark:text-white text-base font-heading">Invoice Receipt Details</h4>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-550 font-mono mt-0.5">ID: #{invoicePreview.invoiceNo}</p>
+                    <h4 className="font-black text-slate-900 dark:text-white text-base font-heading">Invoice Receipt Details</h4>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">ID: #{invoicePreview.invoiceNo}</p>
                   </div>
                   <Button
                     onClick={() => handlePrintPDF(invoicePreview)}
@@ -420,7 +420,7 @@ export default function BillingTab() {
                   </div>
                   <div className="flex justify-between">
                     <span>Payment Channel</span>
-                    <span className="text-indigo-650 dark:text-indigo-400 uppercase font-black">{invoicePreview.paymentMethod}</span>
+                    <span className="text-indigo-600 dark:text-indigo-400 uppercase font-black">{invoicePreview.paymentMethod}</span>
                   </div>
                   
                   <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-1.5">

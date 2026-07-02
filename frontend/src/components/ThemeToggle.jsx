@@ -24,7 +24,7 @@ export default function ThemeToggle() {
       case 'dark':
         return <Moon className="h-4.5 w-4.5 text-indigo-400" />;
       default:
-        return <Laptop className="h-4.5 w-4.5 text-slate-400 dark:text-slate-350" />;
+        return <Laptop className="h-4.5 w-4.5 text-slate-400 dark:text-slate-400" />;
     }
   };
 

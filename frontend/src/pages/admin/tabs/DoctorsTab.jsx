@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Award, Plus, Building2, Briefcase, CheckCircle, Ban, X } from 'lucide-react';
 import { apiService } from '../../../services/api.js';
 import Modal from '../../../components/ui/Modal.jsx';
@@ -109,15 +109,15 @@ export default function DoctorsTab() {
 
             <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-100 dark:border-slate-800/80 text-xs font-semibold text-slate-500 dark:text-slate-400 mt-4">
               <div className="space-y-1">
-                <span className="text-[9px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider block">Department</span>
-                <span className="text-slate-700 dark:text-slate-350 capitalize flex items-center gap-1">
+                <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Department</span>
+                <span className="text-slate-700 dark:text-slate-400 capitalize flex items-center gap-1">
                   <Building2 className="h-3.5 w-3.5 text-slate-400 dark:text-slate-600" />
                   {doc.department}
                 </span>
               </div>
               <div className="space-y-1">
-                <span className="text-[9px] text-slate-400 dark:text-slate-550 font-bold uppercase tracking-wider block">Experience</span>
-                <span className="text-slate-700 dark:text-slate-350 flex items-center gap-1">
+                <span className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider block">Experience</span>
+                <span className="text-slate-700 dark:text-slate-400 flex items-center gap-1">
                   <Briefcase className="h-3.5 w-3.5 text-slate-400 dark:text-slate-600" />
                   {doc.experience}
                 </span>

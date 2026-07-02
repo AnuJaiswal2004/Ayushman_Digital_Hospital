@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Settings, HelpCircle, Phone, MapPin, Building, Clock, Calendar, ShieldAlert, Key, ShieldCheck, UserPlus, Users } from 'lucide-react';
 import { apiService } from '../../../services/api.js';
 import Card from '../../../components/ui/Card.jsx';
@@ -203,7 +203,7 @@ export default function SettingsTab({ setHospitalName }) {
               <div className="space-y-1.5 w-full">
                 <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Hospital Address</label>
                 <div className="relative">
-                  <MapPin className="absolute left-4 top-4 text-slate-400 dark:text-slate-500 h-4 w-4" />
+                  <MapPin className="absolute left-4 top-4 text-slate-400 dark:text-slate-500 h-4 w-4 pointer-events-none" />
                   <textarea
                     name="address"
                     rows="2"
@@ -348,7 +348,7 @@ export default function SettingsTab({ setHospitalName }) {
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Create Account Form */}
-            <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 rounded-xl p-5 space-y-4">
+            <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-5 space-y-4">
               <h4 className="text-xs font-bold text-slate-700 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
                 <UserPlus className="h-4 w-4 text-emerald-500" /> Register Provider / Operator Account
               </h4>
@@ -437,7 +437,7 @@ export default function SettingsTab({ setHospitalName }) {
               <Table headers={['Name', 'Username', 'Staff ID', 'Role', 'Action']}>
                 {usersList.map((user) => (
                   <tr key={user.username} className="hover:bg-slate-50 dark:hover:bg-slate-800/10 border-b border-slate-100 dark:border-slate-800/60">
-                    <td className="py-2.5 px-5 font-bold text-slate-850 dark:text-white">{user.name}</td>
+                    <td className="py-2.5 px-5 font-bold text-slate-900 dark:text-white">{user.name}</td>
                     <td className="py-2.5 px-5 font-mono text-slate-500 dark:text-slate-400">{user.username}</td>
                     <td className="py-2.5 px-5 font-mono text-slate-500 dark:text-slate-400">{user.staffId}</td>
                     <td className="py-2.5 px-5">

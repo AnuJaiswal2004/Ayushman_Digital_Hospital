@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   UserPlus, CalendarCheck, ClipboardList, Search, 
   Trash2, Edit, AlertCircle, CheckCircle, RefreshCcw, X 
@@ -188,7 +188,7 @@ export default function ReceptionTab() {
               <UserPlus className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Walk-in Patient Registration</h3>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white font-heading">Walk-in Patient Registration</h3>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Quickly register patient arriving at front desk</p>
             </div>
           </div>
@@ -262,7 +262,7 @@ export default function ReceptionTab() {
               <CalendarCheck className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Patient Check-In (Book Slot)</h3>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white font-heading">Patient Check-In (Book Slot)</h3>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Verify patient list and allocate clinical slot</p>
             </div>
           </div>
@@ -341,11 +341,11 @@ export default function ReceptionTab() {
       <div className="elevated-surface p-6 shadow-sm space-y-4 border border-slate-200 dark:border-slate-800">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-650 shrink-0">
+            <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-600 shrink-0">
               <ClipboardList className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Today's Clinic Queue</h3>
+              <h3 className="font-bold text-sm text-slate-900 dark:text-white font-heading">Today's Clinic Queue</h3>
               <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Real-time status of arriving patients</p>
             </div>
           </div>
@@ -375,7 +375,7 @@ export default function ReceptionTab() {
                 <th className="py-3.5 px-5 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium text-slate-600 dark:text-slate-350">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium text-slate-600 dark:text-slate-400">
               {filteredQueue.length === 0 ? (
                 <tr>
                   <td colSpan="8" className="py-8 text-center text-slate-400 dark:text-slate-500">

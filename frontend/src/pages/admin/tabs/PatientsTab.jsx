@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Search, Eye, Edit2, Calendar, FileText, Activity, X } from 'lucide-react';
 import { apiService } from '../../../services/api.js';
 import Modal from '../../../components/ui/Modal.jsx';
@@ -122,9 +122,9 @@ export default function PatientsTab() {
             <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all border-b border-slate-100 dark:border-slate-800/60">
               <td className="py-4 px-5 font-mono text-xs text-blue-500 dark:text-blue-400 font-bold">{p.id}</td>
               <td className="py-4 px-5 font-bold text-slate-800 dark:text-white">{p.name}</td>
-              <td className="py-4 px-5 font-mono text-xs text-slate-400 dark:text-slate-450">{p.abha}</td>
-              <td className="py-4 px-5 font-mono text-xs text-slate-400 dark:text-slate-455">{p.phone}</td>
-              <td className="py-4 px-5 text-xs text-slate-400 dark:text-slate-450">{new Date(p.dob).toLocaleDateString()}</td>
+              <td className="py-4 px-5 font-mono text-xs text-slate-400 dark:text-slate-400">{p.abha}</td>
+              <td className="py-4 px-5 font-mono text-xs text-slate-400 dark:text-slate-400">{p.phone}</td>
+              <td className="py-4 px-5 text-xs text-slate-400 dark:text-slate-400">{new Date(p.dob).toLocaleDateString()}</td>
               <td className="py-4 px-5">
                 <Badge 
                   variant={
@@ -176,19 +176,19 @@ export default function PatientsTab() {
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-medium text-slate-500 dark:text-slate-400 pt-2">
                 <div>
-                  <span className="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase">Patient ID</span>
+                  <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Patient ID</span>
                   <span className="text-slate-800 dark:text-white font-mono">{viewPatient.id}</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase">ABHA ID</span>
+                  <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">ABHA ID</span>
                   <span className="text-slate-800 dark:text-white font-mono">{viewPatient.abha}</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase">Phone Number</span>
+                  <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Phone Number</span>
                   <span className="text-slate-800 dark:text-white font-mono">{viewPatient.phone}</span>
                 </div>
                 <div>
-                  <span className="block text-[10px] text-slate-400 dark:text-slate-550 font-bold uppercase">Date of Birth</span>
+                  <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Date of Birth</span>
                   <span className="text-slate-800 dark:text-white">{new Date(viewPatient.dob).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -208,7 +208,7 @@ export default function PatientsTab() {
               ) : (
                 <div className="space-y-4 relative border-l border-slate-200 dark:border-slate-800 pl-4.5 ml-2.5 pt-2">
                   {getPatientTimeline(viewPatient.id).map((appt) => (
-                    <div key={appt.id} className="relative space-y-2 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200/60 dark:border-slate-850">
+                    <div key={appt.id} className="relative space-y-2 bg-slate-50 dark:bg-slate-950 p-4 rounded-xl border border-slate-200/60 dark:border-slate-800">
                       {/* Timeline dot */}
                       <div className="absolute -left-[24.5px] top-5 h-3.5 w-3.5 rounded-full bg-white dark:bg-slate-900 border-2 border-blue-500" />
                       
@@ -229,19 +229,19 @@ export default function PatientsTab() {
 
                       <div className="grid grid-cols-2 gap-4 text-xs pt-2 border-t border-slate-100 dark:border-slate-800/60 text-slate-500 dark:text-slate-400">
                         <div>
-                          <span className="block text-[9px] text-slate-400 dark:text-slate-550 font-bold uppercase">Date & Time</span>
+                          <span className="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Date & Time</span>
                           <span className="text-slate-700 dark:text-slate-300 font-medium">{new Date(appt.date).toLocaleDateString()} at {appt.time}</span>
                         </div>
                         <div>
-                          <span className="block text-[9px] text-slate-400 dark:text-slate-550 font-bold uppercase">Consultation Type</span>
+                          <span className="block text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Consultation Type</span>
                           <span className="text-slate-700 dark:text-slate-300 uppercase font-bold text-[10px]">{appt.type}</span>
                         </div>
                       </div>
 
                       {appt.reason && (
                         <div className="pt-2 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60">
-                          <strong className="text-slate-450 dark:text-slate-550 uppercase text-[9px] block">Reason for Visit:</strong>
-                          <p className="text-slate-655 dark:text-slate-300 italic">"{appt.reason}"</p>
+                          <strong className="text-slate-500 dark:text-slate-400 uppercase text-[9px] block">Reason for Visit:</strong>
+                          <p className="text-slate-600 dark:text-slate-300 italic">"{appt.reason}"</p>
                         </div>
                       )}
                     </div>

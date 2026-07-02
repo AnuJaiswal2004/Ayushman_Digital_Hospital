@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { TrendingUp, DollarSign, CalendarCheck } from 'lucide-react';
 import { useTheme } from '../../../services/theme.js';
@@ -76,7 +76,7 @@ export default function AnalyticsTab() {
         {/* Patient Registrations Trend (Area Chart) */}
         <Card className="lg:col-span-8 space-y-4">
           <div>
-            <h3 className="font-bold text-base text-slate-850 dark:text-white font-heading">Patient Registrations Trend</h3>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white font-heading">Patient Registrations Trend</h3>
             <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">Growth index over the current calendar half</p>
           </div>
           
@@ -105,7 +105,7 @@ export default function AnalyticsTab() {
         {/* Appointment Distribution (Pie Chart) */}
         <Card className="lg:col-span-4 space-y-4 flex flex-col justify-between">
           <div>
-            <h3 className="font-bold text-base text-slate-850 dark:text-white font-heading">Appointments Roster</h3>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white font-heading">Appointments Roster</h3>
             <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">Status conversion analysis</p>
           </div>
 
@@ -146,7 +146,7 @@ export default function AnalyticsTab() {
         {/* Revenue Growth Index (Bar Chart) */}
         <Card className="lg:col-span-12 space-y-4">
           <div>
-            <h3 className="font-bold text-base text-slate-850 dark:text-white font-heading">Monthly Revenue Statistics</h3>
+            <h3 className="font-bold text-base text-slate-900 dark:text-white font-heading">Monthly Revenue Statistics</h3>
             <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">Outpatient and clinical consultation income (INR)</p>
           </div>
 

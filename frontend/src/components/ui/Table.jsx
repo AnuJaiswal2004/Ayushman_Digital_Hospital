@@ -11,7 +11,7 @@ export default function Table({ headers = [], children, className = '' }) {
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium text-slate-600 dark:text-slate-350">
+        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium text-slate-600 dark:text-slate-400">
           {children}
         </tbody>
       </table>

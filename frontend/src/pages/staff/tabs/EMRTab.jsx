@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   HeartPulse, Activity, FileSpreadsheet, User, 
   Plus, Trash2, CalendarClock, Stethoscope, Search, X 
@@ -249,7 +249,7 @@ export default function EMRTab({ readOnly = false, initialPatientId = null }) {
             <HeartPulse className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Electronic Medical Record (EMR)</h3>
+            <h3 className="font-bold text-sm text-slate-900 dark:text-white font-heading">Electronic Medical Record (EMR)</h3>
             <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Verify patient histories and issue prescriptions</p>
           </div>
         </div>
@@ -282,22 +282,22 @@ export default function EMRTab({ readOnly = false, initialPatientId = null }) {
 
               <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <div>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-550 block uppercase font-bold">Patient Name</span>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 block uppercase font-bold">Patient Name</span>
                   <span className="text-slate-800 dark:text-white text-sm font-bold block mt-0.5">{selectedPatient.name}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-550 block uppercase font-bold">ABHA Card ID</span>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 block uppercase font-bold">ABHA Card ID</span>
                   <span className="text-slate-800 dark:text-white font-mono block mt-0.5">{selectedPatient.abha}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-550 block uppercase font-bold">Age / Gender</span>
-                  <span className="text-slate-700 dark:text-slate-350 capitalize block mt-0.5">
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 block uppercase font-bold">Age / Gender</span>
+                  <span className="text-slate-700 dark:text-slate-400 capitalize block mt-0.5">
                     {new Date().getFullYear() - new Date(selectedPatient.dob).getFullYear()} Years / {selectedPatient.gender}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-slate-400 dark:text-slate-550 block uppercase font-bold">Phone</span>
-                  <span className="text-slate-700 dark:text-slate-350 font-mono block mt-0.5">{selectedPatient.phone}</span>
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500 block uppercase font-bold">Phone</span>
+                  <span className="text-slate-700 dark:text-slate-400 font-mono block mt-0.5">{selectedPatient.phone}</span>
                 </div>
               </div>
             </Card>
@@ -364,19 +364,19 @@ export default function EMRTab({ readOnly = false, initialPatientId = null }) {
                 </form>
               ) : (
                 <div className="grid grid-cols-4 gap-3 text-center">
-                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-850 rounded-xl">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-800 rounded-xl">
                     <span className="text-[8px] text-slate-400 dark:text-slate-500 font-bold block uppercase">BP</span>
                     <span className="text-slate-800 dark:text-white font-mono text-xs font-black block mt-0.5">{selectedPatient.emr?.bloodPressure || 'N/A'}</span>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-850 rounded-xl">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-800 rounded-xl">
                     <span className="text-[8px] text-slate-400 dark:text-slate-500 font-bold block uppercase">Sugar</span>
                     <span className="text-slate-800 dark:text-white font-mono text-xs font-black block mt-0.5">{selectedPatient.emr?.sugar || 'N/A'}</span>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-850 rounded-xl">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-800 rounded-xl">
                     <span className="text-[8px] text-slate-400 dark:text-slate-500 font-bold block uppercase">Weight</span>
                     <span className="text-slate-800 dark:text-white font-mono text-xs font-black block mt-0.5">{selectedPatient.emr?.weight ? `${selectedPatient.emr.weight}kg` : 'N/A'}</span>
                   </div>
-                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-850 rounded-xl">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-200/60 dark:border-slate-800 rounded-xl">
                     <span className="text-[8px] text-slate-400 dark:text-slate-500 font-bold block uppercase">Height</span>
                     <span className="text-slate-800 dark:text-white font-mono text-xs font-black block mt-0.5">{selectedPatient.emr?.height ? `${selectedPatient.emr.height}cm` : 'N/A'}</span>
                   </div>
@@ -410,7 +410,7 @@ export default function EMRTab({ readOnly = false, initialPatientId = null }) {
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{item.description}</p>
                       
                       {item.meta && (
-                        <div className="text-[10px] text-slate-655 dark:text-slate-300 font-medium bg-slate-50 dark:bg-slate-950 p-2 rounded border border-slate-100 dark:border-slate-850 mt-1">
+                        <div className="text-[10px] text-slate-600 dark:text-slate-300 font-medium bg-slate-50 dark:bg-slate-950 p-2 rounded border border-slate-100 dark:border-slate-800 mt-1">
                           {item.meta}
                         </div>
                       )}
@@ -428,12 +428,12 @@ export default function EMRTab({ readOnly = false, initialPatientId = null }) {
             {/* Consultation desk */}
             {!readOnly && (
               <Card className="space-y-5">
-                <div className="flex items-center gap-3 pb-3 border-b border-slate-150 dark:border-slate-800">
+                <div className="flex items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
                   <div className="bg-emerald-500/10 p-2.5 rounded-xl text-emerald-600 shrink-0">
                     <Stethoscope className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-slate-850 dark:text-white font-heading">Consultation Notes & Check-out</h3>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white font-heading">Consultation Notes & Check-out</h3>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Record diagnosis and issue prescriptions</p>
                   </div>
                 </div>
@@ -578,12 +578,12 @@ export default function EMRTab({ readOnly = false, initialPatientId = null }) {
             {/* Lab diagnostics */}
             {!readOnly && (
               <Card className="space-y-5">
-                <div className="flex items-center gap-3 pb-3 border-b border-slate-150 dark:border-slate-800">
-                  <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-650 shrink-0">
+                <div className="flex items-center gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+                  <div className="bg-indigo-500/10 p-2.5 rounded-xl text-indigo-600 shrink-0">
                     <FileSpreadsheet className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-sm text-slate-855 dark:text-white font-heading">Diagnostic Lab Entry</h3>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white font-heading">Diagnostic Lab Entry</h3>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium">Record diagnostic parameters directly into EMR</p>
                   </div>
                 </div>

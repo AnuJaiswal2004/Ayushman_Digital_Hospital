@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Users, HeartPulse, Building2, User, Key, Info, HelpCircle } from 'lucide-react';
 import { apiService } from '../services/api.js';
@@ -174,13 +174,13 @@ export default function LandingPage() {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => handleModalOpen('patient')}
-            className="hidden sm:inline-flex text-sm font-semibold text-slate-600 dark:text-slate-350 hover:text-blue-600 dark:hover:text-blue-450 transition-colors"
+            className="hidden sm:inline-flex text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
             Patient Portal
           </button>
           <button 
             onClick={() => handleModalOpen('staff')}
-            className="hidden sm:inline-flex text-sm font-semibold text-slate-600 dark:text-slate-350 hover:text-blue-600 dark:hover:text-blue-450 transition-colors"
+            className="hidden sm:inline-flex text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
           >
             Provider Portal
           </button>
@@ -225,7 +225,7 @@ export default function LandingPage() {
               </button>
               <button 
                 onClick={() => handleModalOpen('register')}
-                className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-800 dark:text-slate-200 text-base font-semibold px-8 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+                className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 text-base font-semibold px-8 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
               >
                 Register ABHA Card
               </button>
@@ -234,11 +234,11 @@ export default function LandingPage() {
             <div className="flex justify-center lg:justify-start items-center gap-6 pt-6 text-slate-400 dark:text-slate-500 text-sm">
               <div className="flex items-center gap-1.5">
                 <Users className="h-4 w-4 text-blue-500" />
-                <strong className="dark:text-slate-350">240k+</strong> Users Registered
+                <strong className="dark:text-slate-400">240k+</strong> Users Registered
               </div>
               <div className="flex items-center gap-1.5">
                 <Building2 className="h-4 w-4 text-emerald-500" />
-                <strong className="dark:text-slate-350">120+</strong> Hospital Units Connected
+                <strong className="dark:text-slate-400">120+</strong> Hospital Units Connected
               </div>
             </div>
           </div>
@@ -566,7 +566,7 @@ export default function LandingPage() {
               />
             </div>
 
-            <div className="bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex gap-3 text-slate-700 dark:text-slate-350 text-[11px] leading-relaxed">
+            <div className="bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 flex gap-3 text-slate-700 dark:text-slate-400 text-[11px] leading-relaxed">
               <Info className="h-4 w-4 text-slate-600 dark:text-slate-400 shrink-0 mt-0.5" />
               <div>
                 <strong>Demo Credentials:</strong><br />

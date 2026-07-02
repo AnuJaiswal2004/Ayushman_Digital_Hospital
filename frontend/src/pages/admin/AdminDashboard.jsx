@@ -273,7 +273,7 @@ export default function AdminDashboard() {
                 </button>
                 {showNotifications && (
                   <div className="absolute right-0 mt-2 w-85 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 text-slate-800 dark:text-slate-200 p-4 space-y-3">
-                    <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-850">
+                    <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
                       <span className="font-bold text-xs text-slate-800 dark:text-white">System Alerts</span>
                       {unreadCount > 0 && (
                         <button 
